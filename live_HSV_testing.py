@@ -1,23 +1,23 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[3]:
 
 import cv2
 import numpy as np
 
 
-# In[2]:
+# In[4]:
 
 def adjust(x):
     pass
     
 
 
-# In[5]:
+# In[7]:
 
 #Adjustment sliders for color range
-cv2.namedWindow('red')
+#cv2.namedWindow('red')
 #max and min red HSV values (Hue, Saturation Value)
 #For typical red objects the hue should be between 155 and 185.  
 #Glowsticks will probably need some modifications and testing
@@ -80,8 +80,8 @@ lowerHTestingDefault=0
 upperHTestingDefault=255
 # define color ranges in HSV
 
-lower_testing = np.array([lowerHTestingDefault, minSGreen, minVGreen])
-upper_testing = np.array([upperHTestingDefault, maxSGreen, maxVGreen]) 
+lower_testing = np.array([lowerHTestingDefault, minSTesting, minVTesting])
+upper_testing = np.array([upperHTestingDefault, maxSTesting, maxVTesting]) 
 
 
 # create trackbars 
@@ -98,7 +98,7 @@ cv2.createTrackbar('Val_Lower', 'testing', lower_testing[2], abs(maxVTesting-min
 #cv2.createTrackbar('upper_green_adjust', 'green', upper_green[0], 79, adjust)
 
 
-# In[6]:
+# In[8]:
 
 cap = cv2.VideoCapture(0)
 
@@ -112,14 +112,14 @@ while(1):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Threshold the selected HSV colors
-    mask_red = cv2.inRange(hsv, lower_red, upper_red)
+    #mask_red = cv2.inRange(hsv, lower_red, upper_red)
       
-    mask_green = cv2.inRange(hsv, lower_green, upper_green)
+    #mask_green = cv2.inRange(hsv, lower_green, upper_green)
     
     mask_testing = cv2.inRange(hsv, lower_testing, upper_testing)
 
     # Bitwise-AND mask and original image
-    ratio='Red:Green '+str(cv2.countNonZero(mask_red))+":"+str(cv2.countNonZero(mask_green))
+    #ratio='Red:Green '+str(cv2.countNonZero(mask_red))+":"+str(cv2.countNonZero(mask_green))
     #res = cv2.bitwise_and(frame,frame, mask= mask_red)
     
     #calculate the resulting image - this may be much slower than just dealing with the masks consider reverting
