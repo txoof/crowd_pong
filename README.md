@@ -1,8 +1,8 @@
 # crowd_pong
-
+.
 Live-Red-Green
 provided as an ipython notebook (can be dumped into standard python
-Requirements: OpenCV, Python 2.7, OpenCV wraper for python, numpy, ipython notebook
+Requirements: OpenCV, Python 2.7, OpenCV wraper for python, numpy
 
 Press "q" to quit the video stream
 
