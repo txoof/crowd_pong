@@ -1,11 +1,12 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[11]:
 
 # HSV Sampling
 import cv2
 import numpy as np
+import time
 
 # Classes
 class colorHSV:
@@ -117,13 +118,13 @@ def readTrackbar(color):
     return(color)
 
 def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255, 0)):
-    font=cv2.FONT_HERSHEY_PLAIN
+    font=cv2.FONT_HERSHEY_COMPLEX_SMALL
     cv2.putText(frame, text, position, font, 2, textColor, 2)
     return(frame)
 
 
 
-# In[4]:
+# In[12]:
 
 
 
@@ -149,12 +150,14 @@ def main():
     initTrackbars(colorA)
     initTrackbars(colorB)
     
+    #FIXME find a way to resize windows dynamically - try rescaling for optimization
     cv2.namedWindow(stickA, flags=cv2.cv.CV_WINDOW_NORMAL)
     cv2.namedWindow(stickB, flags=cv2.cv.CV_WINDOW_NORMAL)
     cv2.namedWindow('Live', flags=cv2.cv.CV_WINDOW_NORMAL)
     
     #set the display on initially
-    toggleDisp=1
+    displayOff=False
+    pause=False
     
     while(1):
         #capture each frame
@@ -178,48 +181,72 @@ def main():
         
         
 
-        # Caluclate result (bitwise and of mask and frame) 
+        # Calculate result (bitwise and of mask and frame) 
         # this adds an extra calculation; remove this and stick with just the masks for
         # extra speed
-        resA=cv2.bitwise_and(frame, frame, mask=maskA)
-        resB=cv2.bitwise_and(frame, frame, mask=maskB)
+        #resA=cv2.bitwise_and(frame, frame, mask=maskA)
+        #resB=cv2.bitwise_and(frame, frame, mask=maskB)
 
-        # Current HSV values
-        addText(resA, text='Low: '+str(colorA.lower), position=(10,50))
-        addText(resA, text='Upp: '+str(colorA.upper), position=(10,100))
-        addText(resB, text='Low: '+str(colorB.lower), position=(10,50))
-        addText(resB, text='Upp: '+str(colorB.upper), position=(10,100))
-        
-        # current color range setting
-        addText(resA, text='Color Range: '+colorA.values[colorA.colorRange][2], position=(10, 150))
-        addText(resB, text='Color Range: '+colorB.values[colorB.colorRange][2], position=(10, 150))
-        
-        # current pixel count and ratio
-        colorAText=colorA.values[colorA.colorRange][2]+": "+str(countA)
-        colorBText=colorB.values[colorB.colorRange][2]+": "+str(countB)
-        addText(resA, text=colorAText+" to "+colorBText, position=(10, 200))
-        addText(resB, text=colorAText+" to "+colorBText, position=(10, 200))
-        
+   
         
 
        
-        print toggleDisp
-      
-        if cv2.waitKey(5) & 0xFF == ord('d'):
-            toggleDisp=toggleDisp*-1
         
-        if toggleDisp < 0:
+        if cv2.waitKey(1) & 0xFF == ord('p'):
+            displayOff=True
+            pause=True
+        
+        if cv2.waitKey(1) & 0xFF == ord ('u'):
+            displayOff=False
+
+        
+        if displayOff and pause:
             cv2.destroyWindow(colorA.name)
             cv2.destroyWindow(colorB.name)
+            #cv2.destroyWindow('Live')
+            addText(frame, 'Live display paused (calculations continue).')
+            addText(frame, 'Press and hold "u" to unpause.', position=(10,100))
+            addText(frame, 'Hold "shift+q" to quit', position=(10,150))
+            cv2.imshow('Live', frame)
             cv2.waitKey(1)
-        else:
+            pause=False
+        
+        if not displayOff:
+            # Calculate result (bitwise and of mask and frame) 
+            # this adds an extra calculation; remove this and stick with just the masks for
+            # extra speed
+            resA=cv2.bitwise_and(frame, frame, mask=maskA)
+            resB=cv2.bitwise_and(frame, frame, mask=maskB)
+            #Turning the display drops processor usage from ~80% to 30%
+            #Display HSV Values
+            addText(resA, text='Low: '+str(colorA.lower), position=(10,50))
+            addText(resA, text='Upp: '+str(colorA.upper), position=(10,100))
+            addText(resB, text='Low: '+str(colorB.lower), position=(10,50))
+            addText(resB, text='Upp: '+str(colorB.upper), position=(10,100))
+            
+            #addText(maskA, text='Low: '+str(colorA.lower), position=(10,50))
+            #addText(maskA, text='Upp: '+str(colorA.upper), position=(10,100))
+            #addText(maskB, text='Low: '+str(colorB.lower), position=(10,50))
+            #addText(maskB, text='Upp: '+str(colorB.upper), position=(10,100))
+
+            # current color range setting
+            addText(resA, text='Color Range: '+colorA.values[colorA.colorRange][2], position=(10, 150))
+            addText(resB, text='Color Range: '+colorB.values[colorB.colorRange][2], position=(10, 150))
+
+            # current pixel count and ratio
+            colorAText=colorA.values[colorA.colorRange][2]+": "+str(countA)
+            colorBText=colorB.values[colorB.colorRange][2]+": "+str(countB)
+            addText(resA, text=colorAText+" to "+colorBText, position=(10, 200))
+            addText(resB, text=colorAText+" to "+colorBText, position=(10, 200))
+        
             cv2.imshow('Live', frame)
             cv2.imshow(colorA.name, resA)
             cv2.imshow(colorB.name, resB)
-
+            #cv2.imshow(colorA.name, maskA)
+            #cv2.imshow(colorB.name, maskB)
         
-
-        
+        pause=False
+               
         # Add confirmation here - should not quit immediately
         if cv2.waitKey(1) & 0xFF == ord('Q'): 
             print 'we out.'
@@ -233,7 +260,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[5]:
+# In[13]:
 
 main()
 
