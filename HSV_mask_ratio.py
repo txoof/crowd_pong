@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[14]:
+# In[25]:
 
 # HSV Sampling
 import cv2
@@ -19,11 +19,15 @@ class colorHSV:
     # upper: numpy array containing hightest interactively set [H, S, V]
     # build names for trackbars
     
-    # DO NOT change these trackbar names; in the OSX OpenCV/QT/Py2.7 environment
-    # the trackbar order is effected by the names
+    # DO NOT change these trackbar names; 
+    # in the OSX OpenCV/QT/Py2.7 environment the trackbar order is effected by the characters in the name!
+    # Hue
     hn='Hue'
+    # Saturation
     sn='S'
+    # Value
     vn='V'
+    # Lower and Upper names
     low='-'
     upp='+'
     
@@ -33,14 +37,16 @@ class colorHSV:
     satName=(sn+low, sn+upp)
     valName=(vn+low, vn+upp)
     
+    # OpenCV uses a H cylinder of 180 degrees; H and S values are 0-255
+    # should this be a tuple or a list? Tuples are imutable, I think.
+    hue=[0, 180]
+    sat=[0, 255]
+    val=[0, 255]
    
 
     def __init__(self, name, hue, sat, val):
         self.name = name
         self.controlName=name+'_win'
-        self.hue = hue
-        self.sat = sat
-        self.val = val
         self.colorRange=0
         self.lower=np.array([hue[0], sat[0], val[0]])
         self.upper=np.array([hue[1], sat[1], val[1]])
@@ -123,7 +129,7 @@ def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255,
 
 
 
-# In[23]:
+# In[26]:
 
 
 
@@ -254,7 +260,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[24]:
+# In[27]:
 
 main()
 
