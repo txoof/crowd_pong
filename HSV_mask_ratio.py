@@ -287,6 +287,10 @@ main()
     Figure out how to read and adjust CV_CAP_PROP_BRIGHTNESS, 
     http://docs.opencv.org/2.4/modules/highgui/doc/reading_and_writing_images_and_video.html
     make it more difficult to quit 
+    add ratio calculations b - a / b or a - b / a  where the denominator is always the smaller number
+    display red:green ratio as colors somehow
+    add web socket
+    clean up directory of cruft
 '''
 
 
