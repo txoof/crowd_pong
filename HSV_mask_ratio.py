@@ -1,12 +1,12 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[14]:
 
 # HSV Sampling
 import cv2
 import numpy as np
-import time
+
 
 # Classes
 class colorHSV:
@@ -28,7 +28,6 @@ class colorHSV:
     upp='+'
     
     #color range values and names
-    #ranges=[[0, 35, 'red'], [25, 65, 'yellow'], [55, 95, 'green'], [85, 125, 'blue'], [115, 155, 'indigo'], [145, 179, 'violet']]
     values=[[0, 35, 'red'], [25, 65, 'yellow'], [55, 95, 'green'], [85, 125, 'blue'], [115, 155, 'indigo'], [145, 179, 'violet']]
     hueName=(hn+low, hn+upp)
     satName=(sn+low, sn+upp)
@@ -124,7 +123,7 @@ def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255,
 
 
 
-# In[12]:
+# In[23]:
 
 
 
@@ -132,7 +131,9 @@ def main():
 
     #VARIABLE DEFS
     
-    # create a button for these presets, something clickable?    
+    # window titles and preset name
+    # Choose from red, yellow, green, blue, indigo, violet to activate a preset.  
+    # Names not in the list above will default to "red", but can be tuned by hand
     stickA='violet'
     stickB='green'
     
@@ -140,6 +141,7 @@ def main():
     videoDev=0
 
     # setup color objects
+    # Move the HSV ranges into the class - this does not need to be user set.
     colorA=colorHSV(stickA, [0,179], [0,255], [0,255])
     colorB=colorHSV(stickB, [0,179], [0,255], [0,255])
   
@@ -163,8 +165,7 @@ def main():
         #capture each frame
         _, frame = cap.read()
     
-        
-        #convert captured frame into HSV color space
+        # convert captured frame into HSV color space
         hsv=cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         
         #Read the trackbar positions
@@ -176,45 +177,45 @@ def main():
         maskA=cv2.inRange(hsv, colorA.lower, colorA.upper)
         maskB=cv2.inRange(hsv, colorB.lower, colorB.upper)
         
+        # The mask zeros everything outside of the set range
+        # Count everything non-zero for each mask
         countA=cv2.countNonZero(maskA)
-        countB=cv2.countNonZero(maskB)
-        
-        
+        countB=cv2.countNonZero(maskB)  
 
-        # Calculate result (bitwise and of mask and frame) 
-        # this adds an extra calculation; remove this and stick with just the masks for
-        # extra speed
-        #resA=cv2.bitwise_and(frame, frame, mask=maskA)
-        #resB=cv2.bitwise_and(frame, frame, mask=maskB)
-
-   
+        #capture keyboard input 
         
-
-       
-        
+        # pause for p key
         if cv2.waitKey(1) & 0xFF == ord('p'):
             displayOff=True
             pause=True
         
+        # unpause for u key
         if cv2.waitKey(1) & 0xFF == ord ('u'):
             displayOff=False
 
+        # Quit for Shfit+Q (cpaital Q)    
+        # Add confirmation here - should not quit immediately
+        if cv2.waitKey(1) & 0xFF == ord('Q'): 
+            print 'we out.'
+            break
         
+        # Stop updating windows
         if displayOff and pause:
+            # Destroying windows saves a bit of memory
             cv2.destroyWindow(colorA.name)
             cv2.destroyWindow(colorB.name)
-            #cv2.destroyWindow('Live')
+            cv2.destroyWindow('Live')
             addText(frame, 'Live display paused (calculations continue).')
             addText(frame, 'Press and hold "u" to unpause.', position=(10,100))
             addText(frame, 'Hold "shift+q" to quit', position=(10,150))
-            cv2.imshow('Live', frame)
+            #cv2.imshow('Live', frame)
             cv2.waitKey(1)
             pause=False
         
         if not displayOff:
             # Calculate result (bitwise and of mask and frame) 
             # this adds an extra calculation; remove this and stick with just the masks for
-            # extra speed
+            # a bit of extra speed
             resA=cv2.bitwise_and(frame, frame, mask=maskA)
             resB=cv2.bitwise_and(frame, frame, mask=maskB)
             #Turning the display drops processor usage from ~80% to 30%
@@ -247,20 +248,13 @@ def main():
         
         pause=False
                
-        # Add confirmation here - should not quit immediately
-        if cv2.waitKey(1) & 0xFF == ord('Q'): 
-            print 'we out.'
-            break
-
-    
-    
     cap.release()
     cv2.destroyAllWindows()
     cv2.waitKey(1)
     print 'thanks for playing'
 
 
-# In[13]:
+# In[24]:
 
 main()
 
