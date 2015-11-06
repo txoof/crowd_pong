@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[25]:
+# In[4]:
 
 # HSV Sampling
 import cv2
@@ -37,14 +37,10 @@ class colorHSV:
     satName=(sn+low, sn+upp)
     valName=(vn+low, vn+upp)
     
-    # OpenCV uses a H cylinder of 180 degrees; H and S values are 0-255
-    # should this be a tuple or a list? Tuples are imutable, I think.
-    hue=[0, 180]
-    sat=[0, 255]
-    val=[0, 255]
-   
-
     def __init__(self, name, hue, sat, val):
+        self.hue = hue
+        self.sat= sat
+        self.val =val
         self.name = name
         self.controlName=name+'_win'
         self.colorRange=0
@@ -129,7 +125,7 @@ def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255,
 
 
 
-# In[26]:
+# In[9]:
 
 
 
@@ -191,6 +187,7 @@ def main():
         #capture keyboard input 
         
         # pause for p key
+        #FIXME this needs to be debounced
         if cv2.waitKey(1) & 0xFF == ord('p'):
             displayOff=True
             pause=True
@@ -210,11 +207,11 @@ def main():
             # Destroying windows saves a bit of memory
             cv2.destroyWindow(colorA.name)
             cv2.destroyWindow(colorB.name)
-            cv2.destroyWindow('Live')
+            #cv2.destroyWindow('Live')
             addText(frame, 'Live display paused (calculations continue).')
             addText(frame, 'Press and hold "u" to unpause.', position=(10,100))
             addText(frame, 'Hold "shift+q" to quit', position=(10,150))
-            #cv2.imshow('Live', frame)
+            cv2.imshow('Live', frame)
             cv2.waitKey(1)
             pause=False
         
@@ -224,7 +221,7 @@ def main():
             # a bit of extra speed
             resA=cv2.bitwise_and(frame, frame, mask=maskA)
             resB=cv2.bitwise_and(frame, frame, mask=maskB)
-            #Turning the display drops processor usage from ~80% to 30%
+            #Pausing the display drops processor usage from ~80% to 30%
             #Display HSV Values
             addText(resA, text='Low: '+str(colorA.lower), position=(10,50))
             addText(resA, text='Upp: '+str(colorA.upper), position=(10,100))
@@ -260,7 +257,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[27]:
+# In[10]:
 
 main()
 
