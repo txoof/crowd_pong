@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[7]:
+# In[ ]:
 
 # HSV Sampling
 import cv2
@@ -175,7 +175,7 @@ def ratio(countA, countB):
         
 
 
-# In[8]:
+# In[ ]:
 
 
 
@@ -316,28 +316,12 @@ def main():
 main()
 
 
-# In[59]:
-
-import numpy as np
-import cv2
-
-# Create a black image
-img = np.zeros((100,800, 3), np.uint8)
-
-# Draw a blue line with thickness of 5 px
-#cv2.line(img,(15,20),(70,50),(255,0,0),5)
-#cv2.circle(img,(200,200), 40, (0,0,255), -1)
-cv2.rectangle(img,(0,0),(800, 800),(255, 150, 10), -1)
-#Display the image
-cv2.imshow("img",img)
-
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-cv2.waitKey(1)
-    
+# In[ ]:
 
 
-# In[60]:
+
+
+# In[ ]:
 
 # TODO
 '''
@@ -353,10 +337,7 @@ cv2.waitKey(1)
 
 # In[ ]:
 
-def HSV2BGR(hsvColor):
-    bgrCol=cv2cvtColor(hsvColor, cv2.COLOR_HSV2BGR)
-    bgrRetrun=int(bgrCol[0][0][0], bgrCol[0][0][1], bgrCol[0][0][2])
-    return(bgrReturn)
+
 
 
 # In[ ]:
