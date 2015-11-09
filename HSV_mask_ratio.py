@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[4]:
+# In[11]:
 
 # HSV Sampling
 import cv2
@@ -123,9 +123,11 @@ def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255,
     cv2.putText(frame, text, position, font, 2, textColor, 2)
     return(frame)
 
+def ratio():
+    print 'ratio goes here'
 
 
-# In[9]:
+# In[12]:
 
 
 
@@ -257,7 +259,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[10]:
+# In[13]:
 
 main()
 
