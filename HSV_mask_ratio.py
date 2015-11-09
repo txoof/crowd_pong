@@ -1,11 +1,13 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[1]:
 
 # HSV Sampling
 import cv2
 import numpy as np
+#if division does not work properly, remove this and change division to float() in ratio sub
+from __future__ import division
 
 
 # Classes
@@ -123,11 +125,20 @@ def addText(frame, text='Text Goes Here', position=(10,50), textColor=(255, 255,
     cv2.putText(frame, text, position, font, 2, textColor, 2)
     return(frame)
 
-def ratio():
-    print 'ratio goes here'
+def ratio(countA, countB):
+    if countA==countB:
+        return(0)
+    if countA > countB:
+        # give a positive number
+        percent=(countA-countB)/countA
+    if countA < countB:
+        #give a negative number
+        percent=-1*((countB-countA)/countB)
+    return(percent)
+        
 
 
-# In[12]:
+# In[2]:
 
 
 
@@ -185,6 +196,7 @@ def main():
         # Count everything non-zero for each mask
         countA=cv2.countNonZero(maskA)
         countB=cv2.countNonZero(maskB)  
+        colorRatio=ratio(countA, countB)
 
         #capture keyboard input 
         
@@ -239,11 +251,15 @@ def main():
             addText(resA, text='Color Range: '+colorA.values[colorA.colorRange][2], position=(10, 150))
             addText(resB, text='Color Range: '+colorB.values[colorB.colorRange][2], position=(10, 150))
 
-            # current pixel count and ratio
+            # Absolute current pixel count 
             colorAText=colorA.values[colorA.colorRange][2]+": "+str(countA)
             colorBText=colorB.values[colorB.colorRange][2]+": "+str(countB)
             addText(resA, text=colorAText+" to "+colorBText, position=(10, 200))
             addText(resB, text=colorAText+" to "+colorBText, position=(10, 200))
+        
+            # color ratio
+            liveText='Color ratio: '+str(colorRatio)
+            addText(frame, text=liveText)
         
             cv2.imshow('Live', frame)
             cv2.imshow(colorA.name, resA)
@@ -259,7 +275,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[13]:
+# In[3]:
 
 main()
 
@@ -291,16 +307,6 @@ main()
     add web socket
     clean up directory of cruft
 '''
-
-
-# In[ ]:
-
-A=2
-B=3
-D=A*1.0
-C=B/D
-print C
-print float(A)/float(B)
 
 
 # In[ ]:
