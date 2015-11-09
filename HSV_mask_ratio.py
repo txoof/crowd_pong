@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[7]:
 
 # HSV Sampling
 import cv2
@@ -58,6 +58,22 @@ def adjust(x):
 def camInit(videoDev):
     return(cv2.VideoCapture(videoDev))
 
+def colorImg(color):
+    # Create a black image
+    xDim=800
+    yDim=100
+    # create a black image
+    img = np.zeros((yDim,xDim, 3), np.uint8)    
+    # find the middle value of the color in HSV space
+    middleHSVColor=np.uint8([[[color.lower[0]+abs(color.lower[0]-color.upper[0])//2,255, 255]]])
+    middleBGRColor=cv2.cvtColor(middleHSVColor, cv2.COLOR_HSV2BGR)
+    # create a colored rectangle that fills the entire image
+    bgr=(int(middleBGRColor[0][0][0]), int(middleBGRColor[0][0][1]), int(middleBGRColor[0][0][2]))
+    cv2.rectangle(img,(0,0),(xDim, yDim), bgr, -1)
+    addText(img, text="middle value of color range", textColor=(0,0,0))
+    return(img)
+    
+
     
 def initTrackbars(color):
     #initialize trackbars to window defineid by color.name
@@ -71,7 +87,10 @@ def initTrackbars(color):
 
     # create a named window that matches the name specified in the variable
     # names that match the defined colors will trigger that color to be chosen at startup
-    cv2.namedWindow(color.controlName, flags=cv2.cv.CV_WINDOW_NORMAL)
+    # temporarily changed to default auto window for testing of color swatches
+    #cv2.namedWindow(color.controlName, flags=cv2.cv.CV_WINDOW_NORMAL)
+    cv2.namedWindow(color.controlName)
+    
     for i in color.values:
         if color.name in i:
             colorPosition=counter
@@ -80,7 +99,7 @@ def initTrackbars(color):
             upperHue=i[1]
             break
         counter=counter+1
-       
+    
     # There is a bizzare bug in this version of opencv that makes the trackbars appear in an 
     # order that depends on the track bar name.  I cannot determine the pattern, but this
     # naming system does work for the moment
@@ -99,11 +118,19 @@ def initTrackbars(color):
     
     #Lower Value
     cv2.createTrackbar(color.valName[0], color.controlName, color.val[0], abs(color.val[1]-color.val[0]), adjust)
-             
-    cv2.resizeWindow(color.controlName, 800, 200)
+
+    #display a colored box to help identify the controls
+    img=colorImg(color)
+    cv2.imshow(color.controlName, img)
+    #temporarily removed for color swatch testing        
+    #cv2.resizeWindow(color.controlName, 800, 200)
+
 
 def readTrackbar(color):
-    oldColorRange=color.colorRange
+    # check the color range coming for comparison later
+    oldColor=color.colorRange
+    oldLower=color.lower[0]
+    oldUpper=color.upper[0]
     #read the trackbar and pass back changes
     # add the slider value to the pre-defined low end of the color
     # [0:H, 1:S, 2:V] 
@@ -113,11 +140,20 @@ def readTrackbar(color):
     color.lower[2]=color.val[0]+cv2.getTrackbarPos(color.valName[0], color.controlName)
     #FIXME if the name changes, this breaks
     color.colorRange=cv2.getTrackbarPos('CR', color.controlName)
-    if color.colorRange != oldColorRange:
+    newColor=color.colorRange
+    
+    # only update if the color range has changed
+    #if color.colorRange != oldColorRange:
+    if oldColor != newColor:
         color.lower[0]=color.values[color.colorRange][0]
         color.upper[0]=color.values[color.colorRange][1]
         cv2.setTrackbarPos(color.hueName[1], color.controlName, color.values[color.colorRange][1])
         cv2.setTrackbarPos(color.hueName[0], color.controlName, color.values[color.colorRange][0])
+    if (oldLower != color.lower[0]) or (oldUpper !=color.upper[0]):
+        img=colorImg(color)
+        cv2.imshow(color.controlName, img)
+        
+
 
     return(color)
 
@@ -139,7 +175,7 @@ def ratio(countA, countB):
         
 
 
-# In[ ]:
+# In[8]:
 
 
 
@@ -167,6 +203,7 @@ def main():
     # initialize the trackbars
     initTrackbars(colorA)
     initTrackbars(colorB)
+
     
     #FIXME find a way to resize windows dynamically - try rescaling for optimization
     cv2.namedWindow(stickA, flags=cv2.cv.CV_WINDOW_NORMAL)
@@ -187,8 +224,7 @@ def main():
         #Read the trackbar positions
         colorA=readTrackbar(colorA)
         colorB=readTrackbar(colorB)
-       
-       
+            
         # Calculate mask 
         maskA=cv2.inRange(hsv, colorA.lower, colorA.upper)
         maskB=cv2.inRange(hsv, colorB.lower, colorB.upper)
@@ -280,7 +316,7 @@ def main():
 main()
 
 
-# In[41]:
+# In[59]:
 
 import numpy as np
 import cv2
@@ -301,12 +337,7 @@ cv2.waitKey(1)
     
 
 
-# In[ ]:
-
-
-
-
-# In[ ]:
+# In[60]:
 
 # TODO
 '''
@@ -322,7 +353,10 @@ cv2.waitKey(1)
 
 # In[ ]:
 
-
+def HSV2BGR(hsvColor):
+    bgrCol=cv2cvtColor(hsvColor, cv2.COLOR_HSV2BGR)
+    bgrRetrun=int(bgrCol[0][0][0], bgrCol[0][0][1], bgrCol[0][0][2])
+    return(bgrReturn)
 
 
 # In[ ]:

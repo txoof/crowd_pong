@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 
-# In[9]:
+# In[3]:
 
 red=np.uint8([[[0,0,255]]])
 hsv_redLow=cv2.cvtColor(red,cv2.COLOR_BGR2HSV)
@@ -29,14 +29,16 @@ dkblue=np.uint8([[[255, 0, 0]]])
 hsv_dkblue=cv2.cvtColor(dkblue, cv2.COLOR_BGR2HSV)
 print 'HSV dkblue', hsv_dkblue
 
-indigo=np.uint8([[[255, 255, 255]]])
-hsv_indigo=cv2.cvtColor(indigo, cv2.COLOR_BGR2HSV)
-print 'HSV indigo', hsv_indigo
+violet=np.uint8([[[255, 0, 255]]])
+hsv_violet=cv2.cvtColor(violet, cv2.COLOR_BGR2HSV)
+print 'HSV violet', hsv_violet
 
 
-# In[ ]:
+# In[8]:
 
-
+dir(dkblue)
+get_ipython().magic(u'whos')
+print dkblue
 
 
 # In[ ]:
