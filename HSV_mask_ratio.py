@@ -1,13 +1,14 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 # HSV Sampling
 import cv2
 import numpy as np
 #if division does not work properly, remove this and change division to float() in ratio sub
 from __future__ import division
+from ws4py.websocket import WebSocket
 
 
 # Classes
@@ -138,7 +139,7 @@ def ratio(countA, countB):
         
 
 
-# In[2]:
+# In[ ]:
 
 
 
@@ -198,8 +199,7 @@ def main():
         countB=cv2.countNonZero(maskB)  
         colorRatio=ratio(countA, countB)
 
-        #capture keyboard input 
-        
+        #capture keyboard input   
         # pause for p key
         #FIXME this needs to be debounced
         if cv2.waitKey(1) & 0xFF == ord('p'):
@@ -275,19 +275,30 @@ def main():
     print 'thanks for playing'
 
 
-# In[3]:
+# In[ ]:
 
 main()
 
 
-# In[ ]:
+# In[41]:
 
+import numpy as np
+import cv2
 
+# Create a black image
+img = np.zeros((100,800, 3), np.uint8)
 
+# Draw a blue line with thickness of 5 px
+#cv2.line(img,(15,20),(70,50),(255,0,0),5)
+#cv2.circle(img,(200,200), 40, (0,0,255), -1)
+cv2.rectangle(img,(0,0),(800, 800),(255, 150, 10), -1)
+#Display the image
+cv2.imshow("img",img)
 
-# In[ ]:
-
-
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+cv2.waitKey(1)
+    
 
 
 # In[ ]:
