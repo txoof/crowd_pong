@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 from __future__ import division
 # HSV Sampling
@@ -175,7 +175,7 @@ def ratio(countA, countB):
         
 
 
-# In[ ]:
+# In[2]:
 
 
 
@@ -315,7 +315,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[ ]:
+# In[3]:
 
 main()
 
