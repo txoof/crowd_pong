@@ -8,7 +8,7 @@ from __future__ import division
 import cv2
 import numpy as np
 #if division does not work properly, remove this and change division to float() in ratio sub
-from ws4py.websocket import WebSocket
+#from ws4py.websocket import WebSocket
 
 
 # Classes
