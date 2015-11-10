@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 #HSV Sampling of video feed
 
@@ -136,15 +136,18 @@ class colorHSV:
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
     
-    def calcmask(self, hsvFrame):
+    def calcMask(self, hsvFrame):
         self.hsvFrame = hsvFrame
         self.mask = cv2.inRange(hsvFrame, self.lower, self.upper)
         return self.mask
-        
-    def calcResult(self, frame):
+    
+    def calcResult(self, mask, frame):
+        self.mask = mask
         self.frame = frame
-        self.result = cv2.bitwise_and(self.frame, self.frame, mask=self.calcMask(frame))
-        return self.result
+        return cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
+        
+        
+  
         
 def colorImg(xDim=800, yDim=100, color=(0, 0, 0) ):
     img=np.zeros((yDim, xDim, 3), np.uint8)
@@ -238,7 +241,9 @@ def main():
         
         # Display the results
         cv2.imshow('Live', frame)
-        cv2.imshow(colorA.name, colorA.calcmask(hsvFrame))
+        #cv2.imshow(colorA.name, colorA.calcMask(frame))
+        cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
+
         
         #cv2.imshow(colorA.name, maskA)
         
@@ -258,7 +263,7 @@ def main():
     
 
 
-# In[2]:
+# In[ ]:
 
 main()
 
