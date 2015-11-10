@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[12]:
 
 #HSV Sampling of video feed
 
@@ -18,7 +18,7 @@ class colorHSV:
     defaultRanges = [[0, 35, 'red'], [25, 65, 'yellow'], [55, 95, 'green'], 
                      [85, 125, 'blue'], [115, 155, 'indigo'], [145, 179, 'violet']]
     # maximum and minimum values for Hue, Sat, Val
-    hueRange = [0,179]
+    hueRange = [0, 179]
     satRange = [0, 255]
     valRange = [0, 255]
     
@@ -30,7 +30,7 @@ class colorHSV:
         self.name = name
         # set the default color range
         self.lower = np.array( [0, 0, 0] )
-        self.upper = np.array( [179, 0, 0])
+        self.upper = np.array( [179, 255, 255])
     
     def createTrackBars(self):
         '''
@@ -58,7 +58,7 @@ class colorHSV:
         # set default lower and upper values for Hue, Saturation, Value (HSV)
         self.lower = np.array([self.hueRange[0], self.satRange[0], self.valRange[0]])
         self.upper = np.array([self.hueRange[1], self.satRange[1], self.valRange[1]])
-        
+                
         for i in self.defaultRanges:
             # create a regexp to match color names - pull the name from the default ranges list
             regexp=self.defaultRanges[iC][2] + '.*'
@@ -77,8 +77,8 @@ class colorHSV:
             self.lower = np.array([self.hueRange[0], self.satRange[0], self.valRange[0]])
             self.upper = np.array([self.hueRange[1], self.satRange[1], self.valRange[1]])
         else:
-            self.lower = np.array([self.defaultRanges[self.colorRange][0], self.hueRange[0], self.hueRange[0]])
-            self.upper = np.array([self.defaultRanges[self.colorRange][1], self.hueRange[1], self.hueRange[1]])    
+            self.lower = np.array([self.defaultRanges[self.colorRange][0], self.satRange[0], self.valRange[0]])
+            self.upper = np.array([self.defaultRanges[self.colorRange][1], self.satRange[1], self.valRange[1]])    
         
         # Hue sliders
         cv2.createTrackbar(self.sliderHue[0], self.controlWinName, self.lower[0], self.hueRange[1], adjust)
@@ -96,15 +96,6 @@ class colorHSV:
         cv2.createTrackbar(self.sliderColRange[0], self.controlWinName, self.colorRange, len(self.defaultRanges) - 1, adjust)
         
 
-        # MOVED this to main loop, doesn't seem like something the class should be doing
-        # add a colored box that matches the middle value of the color range
-        # lower+abs(lower-upper)//2
-        #midHSVcolor = np.uint8([[[self.lower[0] + abs(self.lower[0] - self.upper[0])//2, 255, 255]]])
-        #midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
-        #bgrVal = (int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2]))
-        #cv2.imshow(self.controlWinName, colorImg(yDim = 100, color = bgrVal))
-
-
     def syncTracBars(self):
         # record the position of the track bars
         #HUE
@@ -120,7 +111,6 @@ class colorHSV:
         
         #Color Range
         self.colorRange = 0 + cv2.getTrackbarPos(self.sliderColRange[0], self.controlWinName)
-    
            
     def clone(self):
         '''make a duplicate object'''
@@ -135,19 +125,7 @@ class colorHSV:
             midHSVcolor = np.uint8([[[self.lower[0] + (self.upper[0] - self.lower[0])//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
-    
-    def calcMask(self, hsvFrame):
-        self.hsvFrame = hsvFrame
-        self.mask = cv2.inRange(hsvFrame, self.lower, self.upper)
-        return self.mask
-    
-    def calcResult(self, mask, frame):
-        self.mask = mask
-        self.frame = frame
-        return cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
         
-        
-  
         
 def colorImg(xDim=800, yDim=100, color=(0, 0, 0) ):
     img=np.zeros((yDim, xDim, 3), np.uint8)
@@ -174,17 +152,16 @@ def main():
     colorBoxText='mid-point color'
     
     #base glow stick colors (can be adjusted later manually)
-    stickA='UP Color - violet'
-    stickB='DN Color - green'
+    stickA='UP Color - green'
+    stickB='DN Color - violet'
     videoDev = 0
     cap = cv2.VideoCapture(videoDev)
     colorA = colorHSV(stickA)
     colorB = colorHSV(stickB)
-    
+     
     colorA.createTrackBars()
     colorB.createTrackBars()
-    
-    
+
     #### the colored box could probabl be a class too
     # add a colored box that matches the middle value of the color range
     # lower+abs(lower-upper)//2
@@ -193,6 +170,7 @@ def main():
         colorBox = addText(colorBox, textColor = (0, 0, 0), text=colorBoxText)
         cv2.imshow(color.controlWinName, colorBox)  
     
+   
     
     while(1):
         _, frame = cap.read()
@@ -229,21 +207,33 @@ def main():
                     colorBox = addText(colorBox, textColor = (255, 255, 255), text='out of range')
                 else:
                     colorBox = addText(colorBox, textColor = (0, 0, 0), text=colorBoxText)
+                
                 cv2.imshow(color.controlWinName, colorBox)
+                
 
         #calculate the Masks and results
-        #maskA=cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
-        #maskB=cv2.inRange(hsv, colorB.lower, colorB.upper)
+        maskA = cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
+        maskB = cv2.inRange(hsvFrame, colorB.lower, colorB.upper)
         
         #count non-zero pixels not covered by the mask
-        #countA=cv2.countNonZero(maskA)
-        #countB=cv2.countNonZero(maskB)
+        countA = cv2.countNonZero(maskA)
+        countB = cv2.countNonZero(maskB)
         
+        # make a method for this?
+        resA = cv2.bitwise_and(frame, frame, mask = maskA)
+        resB = cv2.bitwise_and(frame, frame, mask = maskB)
+        
+        resA = addText(resA, text=str(colorA.lower))
+        resA = addText(resA, text=str(colorA.upper), position = (10, 100))
+        
+        resB = addText(resB, text=str(colorB.lower))
+        resB = addText(resB, text=str(colorB.upper), position = (10, 100))
         # Display the results
         cv2.imshow('Live', frame)
         #cv2.imshow(colorA.name, colorA.calcMask(frame))
-        cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
-
+        #cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
+        cv2.imshow(colorA.name, resA)
+        cv2.imshow(colorB.name, resB)
         
         #cv2.imshow(colorA.name, maskA)
         
@@ -263,23 +253,14 @@ def main():
     
 
 
-# In[ ]:
+# In[13]:
 
 main()
 
 
 # In[ ]:
 
-def adjust(x):
-    pass
 
-
-img=cv2.imread('IMG_0026.JPG')
-cv2.namedWindow('foo')
-cv2.createTrackbar('Bar', 'foo', 0, 10, adjust)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-cv2.waitKey(1)
 
 
 # In[ ]:

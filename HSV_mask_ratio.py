@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 # HSV Sampling
 import cv2
@@ -175,7 +175,7 @@ def ratio(countA, countB):
         
 
 
-# In[ ]:
+# In[2]:
 
 
 
@@ -311,7 +311,7 @@ def main():
     print 'thanks for playing'
 
 
-# In[ ]:
+# In[3]:
 
 main()
 
