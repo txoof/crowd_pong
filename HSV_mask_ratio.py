@@ -3,11 +3,11 @@
 
 # In[ ]:
 
+from __future__ import division
 # HSV Sampling
 import cv2
 import numpy as np
 #if division does not work properly, remove this and change division to float() in ratio sub
-from __future__ import division
 from ws4py.websocket import WebSocket
 
 
@@ -206,9 +206,13 @@ def main():
 
     
     #FIXME find a way to resize windows dynamically - try rescaling for optimization
-    cv2.namedWindow(stickA, flags=cv2.cv.CV_WINDOW_NORMAL)
-    cv2.namedWindow(stickB, flags=cv2.cv.CV_WINDOW_NORMAL)
-    cv2.namedWindow('Live', flags=cv2.cv.CV_WINDOW_NORMAL)
+    #cv2.namedWindow(stickA, flags=cv2.cv.CV_WINDOW_NORMAL)
+    #cv2.namedWindow(stickB, flags=cv2.cv.CV_WINDOW_NORMAL)
+    #cv2.namedWindow('Live', flags=cv2.cv.CV_WINDOW_NORMAL)
+    
+    cv2.namedWindow(stickA)
+    cv2.namedWindow(stickB)
+    cv2.namedWindow('Live')
     
     #set the display on initially
     displayOff=False
