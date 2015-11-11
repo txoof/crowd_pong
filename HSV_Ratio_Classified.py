@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[5]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -9,7 +9,7 @@ import re
 import copy
 
 
-# In[105]:
+# In[13]:
 
 #Classes
 class colorHSV:
@@ -108,7 +108,6 @@ class colorHSV:
         
         # create a named window to attach everything to
         cv2.namedWindow(self.controlWinName)
-        print 'created window called', self.controlWinName
         
         # Hue Sliders
         cv2.createTrackbar(self.sliderHue[0], self.controlWinName,
@@ -131,51 +130,54 @@ class colorHSV:
         cv2.createTrackbar(self.sliderColRange[0], self.controlWinName,
                           self.colorRange, len(self.defaultRanges)-1, adjust)
         
-        def syncTracBars(self):
-            '''record the position of openCV trackbars in lower and upper'''
-            
-            #hue
-            self.lower[0] = cv2.getTrackbarPos(self.sliderHue[0],
-                                              self.controlWinName)
-            
-            self.upper[0] = cv2.getTrackbarPos(self.sliderHue[1],
-                                              self.controlWinName)
-            
-            #saturation
-            self.lower[1] = cv2.getTrackbarPos(self.sliderSat[0], 
-                                             self.controlWinName)
-            # currently unused
-            #self.upper[1] = cv2.getTrackbarPos(self.sliderSatat[1],
-            #                                  self.controlWinName)
-            
-            #value
-            self.lower[2] = cv2.getTrackbarPos(self.sliderVal[0],
-                                              self.controlWinName)
-            self.upper[2] = cv2.getTrackbarPos(self.sliderVal[1],
-                                              self.controlWinName)
-            
-            #color range
-            self.colorRange = cv2.getTrackbarPos(self.colorRange[0], 
-                                                self.controlWinName)
-            
+    def syncTrackBars(self):
+        '''record the position of openCV trackbars in lower and upper'''
+
+        #hue
+        self.lower[0] = cv2.getTrackbarPos(self.sliderHue[0], self.controlWinName)
+
+        self.upper[0] = cv2.getTrackbarPos(self.sliderHue[1],self.controlWinName)
+
+        #saturation
+        self.lower[1] = cv2.getTrackbarPos(self.sliderSat[0], self.controlWinName)
+        # currently unused
+        #self.upper[1] = cv2.getTrackbarPos(self.sliderSatat[1], self.controlWinName)
+
+        #value
+        self.lower[2] = cv2.getTrackbarPos(self.sliderVal[0], self.controlWinName)
+        self.upper[2] = cv2.getTrackbarPos(self.sliderVal[1], self.controlWinName)
+
+        #color range
+        self.colorRange = cv2.getTrackbarPos(self.sliderColRange[0], self.controlWinName)
+
+    def copy(self):
+        '''make a duplicate object'''
+        return copy.deepcopy(self)
 
 def adjust(x):
     pass
 
 
-# In[109]:
+# In[14]:
 
-colors = ['colorA' = colorHSV('foo - violet'), colorB = colorHSV('bar - yellow')]
+colorA = colorHSV('foo - violet')
+colorB = colorHSV('bar - yellow')
+colors = [colorA, colorB]
 
 
-# In[ ]:
+# In[15]:
 
 #foo.lower=(foo.setHSVvalues([179, 255, 254]))
 # recurse each of the set colors create trackbars
 for each in colors:
-    each.createTrackbars()
+    each.createTrackBars()
 
 while True:
+
+    
+    for each in colors:
+        each.syncTrackBars()
+        
     if cv2.waitKey(1) & 0xFF == ord('Q'): 
             print 'we out.'
             break
@@ -183,9 +185,10 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[ ]:
+# In[11]:
 
-
+print colorA.colorRange
+print colorB.colorRange
 
 
 # In[ ]:
