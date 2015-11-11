@@ -108,6 +108,7 @@ class colorHSV:
         '''sets a list of values as type numpy.array()'''
         return np.array(hsv)
     
+    
     def createTrackBars(self):
         '''Create openCV HighGUI trackbars in a window that matches name + _contorls'''
         
@@ -196,7 +197,7 @@ colorA = colorHSV('foo - violet')
 colorB = colorHSV('bar - yellow')
 
 
-# In[ ]:
+# In[25]:
 
 #foo.lower=(foo.setHSVvalues([179, 255, 254]))
 # recurse each of the set colors create trackbars
