@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[12]:
+# In[ ]:
 
 #HSV Sampling of video feed
 
@@ -31,6 +31,14 @@ class colorHSV:
         # set the default color range
         self.lower = np.array( [0, 0, 0] )
         self.upper = np.array( [179, 255, 255])
+        
+        # track bar attributes
+        self.controlWinName = self.name + '_controls'
+        self.sliderHue = ['Hue-', 'Hue+']
+        self.sliderSat = ['S-', 'S+']
+        self.sliderVal = ['V-', 'V+']
+        self.sliderColRange = ['CR']
+        
     
     def createTrackBars(self):
         '''
@@ -38,12 +46,13 @@ class colorHSV:
         '''
         #Initialize trackbars
         # Attributes
-        self.controlWinName = self.name + '_controls'
+        # moved into __init__
+        #self.controlWinName = self.name + '_controls'
         
-        self.sliderHue = ['Hue-', 'Hue+']
-        self.sliderSat = ['S-', 'S+']
-        self.sliderVal = ['V-', 'V+']
-        self.sliderColRange = ['CR']
+        #self.sliderHue = ['Hue-', 'Hue+']
+        #self.sliderSat = ['S-', 'S+']
+        #self.sliderVal = ['V-', 'V+']
+        #self.sliderColRange = ['CR']
         
         # create a named window for the controls
         cv2.namedWindow(self.controlWinName)
@@ -253,7 +262,7 @@ def main():
     
 
 
-# In[13]:
+# In[ ]:
 
 main()
 
