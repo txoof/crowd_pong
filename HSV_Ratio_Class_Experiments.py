@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[4]:
 
 #HSV Sampling of video feed
 
@@ -22,23 +22,26 @@ class colorHSV:
     satRange = [0, 255]
     valRange = [0, 255]
     
+     # track bar attributes
+    sliderHue = ['Hue-', 'Hue+']
+    sliderSat = ['S-', 'S+']
+    sliderVal = ['V-', 'V+']
+    sliderColRange = ['CR']
+    
     def __init__(self, name='default', colorRange = 0):
         '''
         Return an HSV Color Range Object
         '''
         #Attributes
         self.name = name
-        # set the default color range
+        
+        # set the default color range for HSV
         self.lower = np.array( [0, 0, 0] )
         self.upper = np.array( [179, 255, 255])
-        
+    
         # track bar attributes
         self.controlWinName = self.name + '_controls'
-        self.sliderHue = ['Hue-', 'Hue+']
-        self.sliderSat = ['S-', 'S+']
-        self.sliderVal = ['V-', 'V+']
-        self.sliderColRange = ['CR']
-        
+    
     
     def createTrackBars(self):
         '''
@@ -46,7 +49,7 @@ class colorHSV:
         '''
         #Initialize trackbars
         # Attributes
-        # moved into __init__
+        # moved into class attributes
         #self.controlWinName = self.name + '_controls'
         
         #self.sliderHue = ['Hue-', 'Hue+']
@@ -166,8 +169,7 @@ def main():
     videoDev = 0
     cap = cv2.VideoCapture(videoDev)
     colorA = colorHSV(stickA)
-    colorB = colorHSV(stickB)
-     
+    colorB = colorHSV(stickB) 
     colorA.createTrackBars()
     colorB.createTrackBars()
 
@@ -262,7 +264,7 @@ def main():
     
 
 
-# In[ ]:
+# In[5]:
 
 main()
 
