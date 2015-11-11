@@ -168,11 +168,29 @@ def main():
     stickB='DN Color - violet'
     videoDev = 0
     cap = cv2.VideoCapture(videoDev)
+    
+    # MARTIN! - does this double the amount of memory that I am using?
+    # If I do the following things, I think I'll be duplicating the frame in each object.
+    #Capture a single frame, do an HSV conversion and pass this in as frame and hsvFRame under init
+    # how do I keep updating this? - Do I need to keep passing the frame in?
+    # or somethign like: 
+    # colorX.frame = cap.read
+    # colorX.hsvFrame = cv2.cvtColor(colorX.frame, cv2.COLOR_BGR2HSV)
+    
+    
+    # capture a single frame and convert it to pass to the class
+    _, frame = cap.read
+    hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
     colorA = colorHSV(stickA)
     colorB = colorHSV(stickB) 
+    #colorA = colorHSV(stickA)
+    #colorB = colorHSV(stickB) 
     colorA.createTrackBars()
     colorB.createTrackBars()
 
+
+    
     #### the colored box could probabl be a class too
     # add a colored box that matches the middle value of the color range
     # lower+abs(lower-upper)//2
@@ -293,7 +311,7 @@ def main():
     
 
 
-# In[ ]:
+# In[3]:
 
 main()
 
