@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 #HSV Sampling of video feed
 
@@ -140,14 +140,14 @@ class colorHSV:
 
 
 class cvFrame():
-    '''class that holds mask information'''
+    '''class that holds frame information'''
     #Attributes
     name = 'OpenCV Captured Frame'
 
-    def __init__(self, frame):
-        '''expects an openCV captured frame'''
-        self.frame = frame
-        self.hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    def __init__(self, frameTup):
+        '''expects an openCV captured frame tuple'''
+        self.frame = frameTup[1]
+        self.hsvFrame = cv2.cvtColor(frameTup[1], cv2.COLOR_BGR2HSV)
     
     def calcMask(self, color):
         '''calculate a mask based on an HSV lower range and HSV upper range'''
@@ -155,6 +155,7 @@ class cvFrame():
         return mask
     
     def calcResult(self):
+        '''method for calculating anding of frame and mask'''
         result = cv2.bitwise_and(self.frame, self.frame, mask=self.calcMask())
         return result
 
@@ -189,6 +190,9 @@ def main():
     videoDev = 0
     cap = cv2.VideoCapture(videoDev)
     
+    # initialize myFrame
+    myFrame = cvFrame(cap.read())
+    
     # MARTIN! - does this double the amount of memory that I am using?
     # If I do the following things, I think I'll be duplicating the frame in each object.
     #Capture a single frame, do an HSV conversion and pass this in as frame and hsvFRame under init
@@ -199,8 +203,6 @@ def main():
      
     colorA = colorHSV(stickA)
     colorB = colorHSV(stickB) 
-    #colorA = colorHSV(stickA)
-    #colorB = colorHSV(stickB) 
     colorA.createTrackBars()
     colorB.createTrackBars()
     
@@ -215,12 +217,12 @@ def main():
     #set the display on initially
     displayOff=False
     pause=False
-   
+    
     while(1):
         _, frame = cap.read()
 
         
-        #myFrame = cvFrame(cap.read())
+        myFrame = cvFrame(cap.read())
         
         # convert frame to HSV
         hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -292,8 +294,10 @@ def main():
         if not displayOff:
         
             #calculate the Masks and results
-            maskA = cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
-            maskB = cv2.inRange(hsvFrame, colorB.lower, colorB.upper)
+            #maskA = cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
+            #maskB = cv2.inRange(hsvFrame, colorB.lower, colorB.upper)
+            maskA = myFrame.calcMask(colorA)
+            maskB = myFrame.calcMask(colorB)
 
             #count non-zero pixels not covered by the mask
             countA = cv2.countNonZero(maskA)
@@ -310,15 +314,13 @@ def main():
             resB = addText(resB, text=str(colorB.upper), position = (10, 100))
             # Display the results
             cv2.imshow('Live', frame)
-            #cv2.imshow(colorA.name, colorA.calcMask(frame))
-            #cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
             cv2.imshow(colorA.name, resA)
             cv2.imshow(colorB.name, resB)
 
             #cv2.imshow(colorA.name, maskA)
 
   
-
+   
     #release the capture device and destroy windows
     cap.release()
     cv2.destroyAllWindows()
@@ -327,17 +329,29 @@ def main():
     
 
 
-# In[ ]:
+# In[2]:
 
 main()
 
 
-# In[ ]:
+# In[1]:
+
+import cv2
+import numpy as np
+
+cap = cv2.VideoCapture(0)    
+foo = cap.read()
 
 
+# In[17]:
+
+print dir(foo)
 
 
-# In[ ]:
+# In[3]:
 
-
+type(foo[1])
+dir(foo[1])
+cv2.imshow('foo', foo[1])
+cv2.waitKey(1)
 
