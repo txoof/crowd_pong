@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 #HSV Sampling of video feed
 
@@ -137,7 +137,24 @@ class colorHSV:
             midHSVcolor = np.uint8([[[self.lower[0] + (self.upper[0] - self.lower[0])//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
-        
+
+class cvFrame(self, frame)
+    '''class that holds mask information'''
+    #Attributes
+    name = 'OpenCV Captured Frame'
+
+    def __init__(self, frame)
+        '''expects an openCV captured frame'''
+        self.frame = frame
+        self.hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    def calcMask(self, color):
+        '''calculate a mask based on an HSV lower range and HSV upper range'''
+        mask = cv2.inRange(self.hsvFrame, color.lower, color.upper)
+        return mask
+    
+    def calcResult(self)
+        result = cv2.bitwise_and(self.frame, self.frame, mask=self.calcMask())
         
 def colorImg(xDim=800, yDim=100, color=(0, 0, 0) ):
     img=np.zeros((yDim, xDim, 3), np.uint8)
@@ -311,7 +328,7 @@ def main():
     
 
 
-# In[3]:
+# In[ ]:
 
 main()
 
