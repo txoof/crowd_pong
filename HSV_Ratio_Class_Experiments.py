@@ -138,12 +138,13 @@ class colorHSV:
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
 
-class cvFrame(self, frame)
+
+class cvFrame():
     '''class that holds mask information'''
     #Attributes
     name = 'OpenCV Captured Frame'
 
-    def __init__(self, frame)
+    def __init__(self, frame):
         '''expects an openCV captured frame'''
         self.frame = frame
         self.hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -153,9 +154,11 @@ class cvFrame(self, frame)
         mask = cv2.inRange(self.hsvFrame, color.lower, color.upper)
         return mask
     
-    def calcResult(self)
+    def calcResult(self):
         result = cv2.bitwise_and(self.frame, self.frame, mask=self.calcMask())
-        
+        return result
+
+
 def colorImg(xDim=800, yDim=100, color=(0, 0, 0) ):
     img=np.zeros((yDim, xDim, 3), np.uint8)
     cv2.rectangle(img, (0,0), (xDim, yDim), color, -1)
@@ -193,20 +196,13 @@ def main():
     # or somethign like: 
     # colorX.frame = cap.read
     # colorX.hsvFrame = cv2.cvtColor(colorX.frame, cv2.COLOR_BGR2HSV)
-    
-    
-    # capture a single frame and convert it to pass to the class
-    _, frame = cap.read
-    hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    
+     
     colorA = colorHSV(stickA)
     colorB = colorHSV(stickB) 
     #colorA = colorHSV(stickA)
     #colorB = colorHSV(stickB) 
     colorA.createTrackBars()
     colorB.createTrackBars()
-
-
     
     #### the colored box could probabl be a class too
     # add a colored box that matches the middle value of the color range
@@ -222,6 +218,9 @@ def main():
    
     while(1):
         _, frame = cap.read()
+
+        
+        #myFrame = cvFrame(cap.read())
         
         # convert frame to HSV
         hsvFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
