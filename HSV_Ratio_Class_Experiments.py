@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 #HSV Sampling of video feed
 
@@ -181,8 +181,10 @@ def main():
         colorBox = addText(colorBox, textColor = (0, 0, 0), text=colorBoxText)
         cv2.imshow(color.controlWinName, colorBox)  
     
+    #set the display on initially
+    displayOff=False
+    pause=False
    
-    
     while(1):
         _, frame = cap.read()
         
@@ -220,40 +222,67 @@ def main():
                     colorBox = addText(colorBox, textColor = (0, 0, 0), text=colorBoxText)
                 
                 cv2.imshow(color.controlWinName, colorBox)
-                
-
-        #calculate the Masks and results
-        maskA = cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
-        maskB = cv2.inRange(hsvFrame, colorB.lower, colorB.upper)
         
-        #count non-zero pixels not covered by the mask
-        countA = cv2.countNonZero(maskA)
-        countB = cv2.countNonZero(maskB)
         
-        # make a method for this?
-        resA = cv2.bitwise_and(frame, frame, mask = maskA)
-        resB = cv2.bitwise_and(frame, frame, mask = maskB)
-        
-        resA = addText(resA, text=str(colorA.lower))
-        resA = addText(resA, text=str(colorA.upper), position = (10, 100))
-        
-        resB = addText(resB, text=str(colorB.lower))
-        resB = addText(resB, text=str(colorB.upper), position = (10, 100))
-        # Display the results
-        cv2.imshow('Live', frame)
-        #cv2.imshow(colorA.name, colorA.calcMask(frame))
-        #cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
-        cv2.imshow(colorA.name, resA)
-        cv2.imshow(colorB.name, resB)
-        
-        #cv2.imshow(colorA.name, maskA)
+        # Keyboard processing
         
         # Quit for Shfit+Q (cpaital Q)    
         # Add confirmation here - should not quit immediately
         if cv2.waitKey(1) & 0xFF == ord('Q'): 
             print 'we out.'
             break
+
+        # Pause live display (p)
+        if cv2.waitKey(1) & 0xFF == ord ('p'):
+            displayOff=True
+            pause=True
+        
+        # unpause for u key
+        if cv2.waitKey(1) & 0xFF == ord ('u'):
+            displayOff=False
+        
+        
+        # Stop updating windows
+        if displayOff and pause:
+            # Destroying windows saves a bit of memory
+            cv2.destroyWindow(colorA.name)
+            cv2.destroyWindow(colorB.name)
+            #cv2.destroyWindow('Live')
+            addText(frame, 'Live display paused (calculations continue).')
+            addText(frame, 'Press and hold "u" to unpause.', position=(10,100))
+            addText(frame, 'Hold "shift+q" to quit', position=(10,150))
+            cv2.imshow('Live', frame)
+            cv2.waitKey(1)
+            pause=False
             
+        if not displayOff:
+        
+            #calculate the Masks and results
+            maskA = cv2.inRange(hsvFrame, colorA.lower, colorA.upper)
+            maskB = cv2.inRange(hsvFrame, colorB.lower, colorB.upper)
+
+            #count non-zero pixels not covered by the mask
+            countA = cv2.countNonZero(maskA)
+            countB = cv2.countNonZero(maskB)
+
+            # make a method for this?
+            resA = cv2.bitwise_and(frame, frame, mask = maskA)
+            resB = cv2.bitwise_and(frame, frame, mask = maskB)
+
+            resA = addText(resA, text=str(colorA.lower))
+            resA = addText(resA, text=str(colorA.upper), position = (10, 100))
+
+            resB = addText(resB, text=str(colorB.lower))
+            resB = addText(resB, text=str(colorB.upper), position = (10, 100))
+            # Display the results
+            cv2.imshow('Live', frame)
+            #cv2.imshow(colorA.name, colorA.calcMask(frame))
+            #cv2.imshow(colorA.name, colorA.calcResult(colorA.calcMask(hsvFrame), frame))
+            cv2.imshow(colorA.name, resA)
+            cv2.imshow(colorB.name, resB)
+
+            #cv2.imshow(colorA.name, maskA)
+
   
 
     #release the capture device and destroy windows
@@ -264,7 +293,7 @@ def main():
     
 
 
-# In[5]:
+# In[ ]:
 
 main()
 
