@@ -1,15 +1,12 @@
 
 # coding: utf-8
 
-# In[26]:
+# In[9]:
 
 import cv2
 import numpy as np
 import re
 import copy
-
-
-# In[36]:
 
 #Classes
 class colorHSV:
@@ -90,16 +87,11 @@ class colorHSV:
         if not self.colorRange:
             self.colorRange = colorRange
             
-        # default color range
+        # set to default color range
         self.setRangeDefault()
-#        self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
-#                                        self.satRange[0], self.valRange[0]] )
-#        self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
-#                                        self.satRange[1], self.valRange[1]] )
-#        self.lower = self.setHSVvalues([self.hueRange[0], self.satRange[0], self.valRange[0]])
-#        self.upper = self.setHSVvalues([self.hueRange[1], self.satRange[1], self.valRange[1]])
     
     def setRangeDefault(self):
+        '''use the predefined defaults to set hue range'''
         self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
                                         self.satRange[0], self.valRange[0]] )
         self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
@@ -166,7 +158,6 @@ class colorHSV:
         else:    
             midHSVcolor = np.uint8([[[self.lower[0] + (colorDelta)//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
-        print self.name, self.lower, self.upper, midBGRcolor
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
 
         
@@ -174,10 +165,41 @@ class colorHSV:
         '''make a duplicate object'''
         return copy.deepcopy(self)
     
+    # Ask martin about this again
     def hasChanged(self):
         '''compare self to a copy and if it has changed'''
         pass
 
+class cvFrame:
+    
+    def __init__(self, videoDev = 0):
+        '''create a frame object that holds all of the frame, hsv frame and mask data for a filter
+        frame - cv2.VideoCapture(<video device>)
+        name - human readable name for refference 
+        hsvFrame - frame converted into HSV space
+        '''
+        self.cap = cv2.VideoCapture(videoDev)
+        #_, self.frame = self.cap.read()
+        self.frame = self.readFrame()
+        print "frame type", type(self.frame)
+        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+    
+    # ideally this should update the HSV frame as well.  Don't know how to make that happen
+    def readFrame(self):
+        '''update the stored frame from the video capture device'''
+        _, self.frame = self.cap.read() 
+        return self.frame
+        
+    def cvtHSV(self):
+        '''create an HSV version of the frame'''
+        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        return self.hsvFrame
+        
+    def release(self):
+        '''release the video capture device'''
+        self.cap.release()
+    
+    
 def adjust(x):
     pass
 
@@ -197,25 +219,43 @@ def colorSwatch(swatchColor = (255, 0, 255), xDim = 800, yDim = 100):
 def updateControlWindow(name, midBGRcolor, colorRange='' ):
     img = colorSwatch(swatchColor = midBGRcolor)
     img = addText(img, textColor = (255, 255, 255), text = 'aproximate middle of hue range')
-    img = addText(img, textColor = (255, 255, 255), text = colorRange, position = (10, 50))
+    img = addText(img, textColor = (255, 255, 255), text = 'color range: ' + colorRange, position = (10, 50))
     img = addText(img, textColor = (255, 255, 255), text = name, position = (10, 75))
     cv2.imshow(name, img)
     #return img
 
 
-# In[38]:
+# In[12]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
+
+#video device
+videoDev = 0
+# create a fame capture varaible
+#capFrame = cv2.VideoCapture(videoDev)
+myFrame = cvFrame(0)
+
 # recurse each of the set colors and create trackbars
 for color in [colorA, colorB]:
     color.createTrackBars()
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
 
-while True:
-    
 
+    
+while True:
+    # this method does not work; the video captrure stutters badly
+    #myFrame = cvFrame(cv2.VideoCapture(videoDev).read())
+#    myFrame = cvFrame(capFrame.read())
+    
+    myFrame.readFrame()
+    myFrame.cvtHSV()
+    # methodize this
+    cv2.imshow('foo', myFrame.frame)
+    #hsvFrame = cv2.cvtColor(myFrame.frame, cv2.COLOR_BGR2HSV)
+    cv2.imshow('hsv_foo', myFrame.hsvFrame)
+    
     for color in [colorA, colorB]:
         changes = False
         #make a copy of each color object for checking later
@@ -230,7 +270,6 @@ while True:
             changes=True
         
         # if the HSV sliders have moved, update color swatch
-        # something is broken with the calculation of the mid point - upper slider does not work
         if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
             changes=True
         
@@ -241,14 +280,16 @@ while True:
 
         
         
+        
     if cv2.waitKey(1) & 0xFF == ord('Q'): 
             print 'we out.'
             break
+myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[35]:
+# In[ ]:
 
 print colorA.defaultRanges
 print colorA.colorRange
@@ -257,6 +298,11 @@ print colorA.upper
 print colorB.colorRange
 print colorB.lower
 print colorB.upper
+
+
+# In[1]:
+
+print type(myFrame.frame)
 
 
 # In[ ]:
