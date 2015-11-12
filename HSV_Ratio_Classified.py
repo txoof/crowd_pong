@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[9]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -177,12 +177,14 @@ class cvFrame:
         frame - cv2.VideoCapture(<video device>)
         name - human readable name for refference 
         hsvFrame - frame converted into HSV space
+        mask - a mask calculated based on properties passed
         '''
         self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
         self.frame = self.readFrame()
-        print "frame type", type(self.frame)
         self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        self.mask = self.calcMask()
+        self.result = self.calcRes()
     
     # ideally this should update the HSV frame as well.  Don't know how to make that happen
     def readFrame(self):
@@ -199,6 +201,14 @@ class cvFrame:
         '''release the video capture device'''
         self.cap.release()
     
+    def calcMask(self, lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
+        '''calculate a mask based on two np.array objects with HSV values'''
+        self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
+        return self.mask
+    
+    def calcRes(self):
+        self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
+        return self.result
     
 def adjust(x):
     pass
@@ -225,7 +235,7 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 
-# In[12]:
+# In[2]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
@@ -249,12 +259,6 @@ while True:
     #myFrame = cvFrame(cv2.VideoCapture(videoDev).read())
 #    myFrame = cvFrame(capFrame.read())
     
-    myFrame.readFrame()
-    myFrame.cvtHSV()
-    # methodize this
-    cv2.imshow('foo', myFrame.frame)
-    #hsvFrame = cv2.cvtColor(myFrame.frame, cv2.COLOR_BGR2HSV)
-    cv2.imshow('hsv_foo', myFrame.hsvFrame)
     
     for color in [colorA, colorB]:
         changes = False
@@ -278,12 +282,34 @@ while True:
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
 
-        
-        
-        
-    if cv2.waitKey(1) & 0xFF == ord('Q'): 
+    # update the captured frame every round
+    myFrame.readFrame()
+    myFrame.cvtHSV()
+    # show the live frame
+    cv2.imshow('Live', myFrame.frame)
+    
+    # update the mask and resultant frame each cycle
+    for color in [colorA, colorB]:
+        # update the mask
+        myFrame.calcMask(color.lower, color.upper)
+        # update the result frame
+        myFrame.calcRes()
+        cv2.imshow(color.name, myFrame.result)
+    
+    # capture key presses and do stuff
+    keyPress = cv2.waitKey(1)
+    if keyPress:
+        if keyPress & 0xFF == ord ('p'):
+            print 'pause!'
+            
+        if keyPress & 0xFF == ord ('Q'):
             print 'we out.'
             break
+            
+        if keyPress & 0xFF == ord ('u'):
+            print 'unpause!'
+        keyPress=False
+    
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
@@ -291,18 +317,7 @@ cv2.waitKey(1)
 
 # In[ ]:
 
-print colorA.defaultRanges
-print colorA.colorRange
-print colorA.lower
-print colorA.upper
-print colorB.colorRange
-print colorB.lower
-print colorB.upper
 
-
-# In[1]:
-
-print type(myFrame.frame)
 
 
 # In[ ]:
