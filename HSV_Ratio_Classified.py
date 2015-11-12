@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[23]:
+# In[2]:
 
 import cv2
 import numpy as np
@@ -231,7 +231,7 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     '''update the control pannel windows with color swatches and text'''
     img = colorSwatch(swatchColor = midBGRcolor)
     if midBGRcolor == (0, 0, 0):
-        img = addText(img, text = 'Negative Hue Difference - OUT OF RANGE!')
+        img = addText(img, text = 'Hue + < Hue - OUT OF RANGE!')
     else:
         img = addText(img, textColor = (255, 255, 255), text = 'Aproximate middle color of hue range')
         img = addText(img, textColor = (255, 255, 255), text = 'Color range: ' + colorRange, position = (10, 50))
@@ -240,7 +240,7 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 
-# In[29]:
+# In[7]:
 
 # init variables
 
@@ -268,11 +268,8 @@ for color in channels:
                         colorRange=color.defaultRanges[color.colorRange][2])
     
 # begin looping until user quits
-while True:
-    
-    ######FIXME I broke live updating in this version.  WTF?
-    
-    
+while True: 
+  
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
     # pause live display, destroy windows, display pause message
@@ -292,8 +289,14 @@ while True:
     
     # check for changes in trackbar
     # update control panels and color swatches
+    # update live frame 
     # calculate the mask for each channel
     
+    # capture a frame and convert to HSV space
+    myFrame.readFrame()
+    myFrame.cvtHSV()
+    
+    # loop over each channel
     for color in channels:
         changes = False
         #make a copy of the color object for checking later 
@@ -317,7 +320,8 @@ while True:
             # update the color swatch attached to each control window
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
-        
+            
+        # calculate the masks and pixel count 
         masks[color.name] = myFrame.calcMask(color.lower, color.upper)
         pixelCount[color.name] = myFrame.nonZero
 
@@ -334,25 +338,36 @@ while True:
         cv2.imshow('Live', pauseFrame)
         # unset pause condition
         pause = False       
-        
-    if not displayOff:
-        cv2.imshow('Live', myFrame.frame)
-
-
-    
+   
     # calculate the resultant image for each channel
     # display live, result channels or pause message
+    if not displayOff:
+        cv2.imshow('Live', myFrame.frame)
+        # FIXME! Hack that does not use the class
+        # I can't figure out how to do this using the class methods I have built.  
+        # I would rather display each result frame from within a for loop like everything else
+        # Unfortunately the mask is not recorded in the object so the last mask that is calculated
+        # is saved and the result is based on ONLY that structure.
+        resA = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorA.name])
+        addText(resA, text = 'lower: ' + str(colorA.lower))
+        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50))
+        resB = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorB.name])
+        addText(resB, text = 'lower: ' + str(colorB.lower))
+        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
+        cv2.imshow(colorA.name, resA)
+        cv2.imshow(colorB.name, resB)
+    
 # destroy all windows
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)    
 
 
-# In[28]:
+# In[4]:
 
-print masks
-for each in masks:
-    print each
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)
 
 
 # In[8]:
@@ -463,40 +478,9 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[3]:
+# In[6]:
 
-print count
-
-
-# In[ ]:
-
-import random
-count = {}
-for color in [colorA, colorB]:
-    count[color.name] = random.random()
-    
-    
-
-
-# In[36]:
-
-tel={'jack': 56}
-print tel
-print count
-print count['UP - green']
-
-
-# In[17]:
-
-print random.random()
-
-
-# In[15]:
-
-help (random.Random.seed())
-
-
-# In[ ]:
-
-
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)
 
