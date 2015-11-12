@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[8]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -9,7 +9,7 @@ import re
 import copy
 
 
-# In[17]:
+# In[21]:
 
 #Classes
 class colorHSV:
@@ -91,18 +91,19 @@ class colorHSV:
             self.colorRange = colorRange
             
         # default color range
-        self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
-                                        self.satRange[0], self.valRange[0]] )
-        self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
-                                        self.satRange[1], self.valRange[1]] )
-#        self.lower = self.setHSVvalues([self.hueRange[0], self.satRange[0], self.valRange[0]])
-#        self.upper = self.setHSVvalues([self.hueRange[1], self.satRange[1], self.valRange[1]])
-    
-#    def setRangeDefault(self):
+        self.setRangeDefault()
 #        self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
 #                                        self.satRange[0], self.valRange[0]] )
 #        self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
 #                                        self.satRange[1], self.valRange[1]] )
+#        self.lower = self.setHSVvalues([self.hueRange[0], self.satRange[0], self.valRange[0]])
+#        self.upper = self.setHSVvalues([self.hueRange[1], self.satRange[1], self.valRange[1]])
+    
+    def setRangeDefault(self):
+        self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
+                                        self.satRange[0], self.valRange[0]] )
+        self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
+                                        self.satRange[1], self.valRange[1]] )
     
     def setHSVvalues(self, hsv = np.array( [0, 0, 0] )):
         '''sets a list of values as type numpy.array()'''
@@ -175,49 +176,59 @@ class colorHSV:
 def adjust(x):
     pass
 
-def addText(img, text = 'your text here', position = (10, 50), 
+def addText(img, text = 'your text here', position = (10, 25), 
             textColor = (0, 255, 0)):
     '''Add text to an openCV image'''
     font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    cv2.putText(img, text, position, font, 1.5, textColor, 2)
+    cv2.putText(img, text, position, font, 1.25, textColor, 2)
     return img
 
-def colorSwatch(text = 'your text here', swatchColor = (255, 0, 255), 
-                textColor = (0, 255, 0), xDim = 800, yDim = 100):
+def colorSwatch(swatchColor = (255, 0, 255), xDim = 800, yDim = 100):
     img = np.zeros((yDim, xDim, 3), np.uint8)
-    cv2.rectangle(img, (0, 0), (xDim, yDim), swatchColor, -1)
-    
+    cv2.rectangle(img, (0, 0), (xDim, yDim), swatchColor, -1) 
     return img
-    
+
+ 
+def updateControlWindow(name, midBGRcolor, colorRange='' ):
+    img = colorSwatch(swatchColor = midBGRcolor)
+    img = addText(img, textColor = (255, 255, 255), text = 'aproximate middle of hue range')
+    img = addText(img, textColor = (255, 255, 255), text = colorRange, position = (10, 50))
+    img = addText(img, textColor = (255, 255, 255), text = name, position = (10, 75))
+    cv2.imshow(name, img)
+    #return img
 
 
-# In[18]:
+# In[24]:
 
-colorA = colorHSV('foo - violet')
-colorB = colorHSV('bar - yellow')
-
-
-# In[25]:
-
-#foo.lower=(foo.setHSVvalues([179, 255, 254]))
+colorA = colorHSV('UP - green')
+colorB = colorHSV('DOWN - violet')
 # recurse each of the set colors create trackbars
-for each in [colorA, colorB]:
-    each.createTrackBars()
-    box = colorSwatch(swatchColor = each.midBGRcolor())
-    # add a colored box to help ID the control window
-    box = addText(box, textColor = (255, 255, 255), text = 'aproximate middle of hue range')
-    cv2.imshow(each.controlWinName, box)
+for color in [colorA, colorB]:
+    color.createTrackBars()
+    updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                        colorRange=color.defaultRanges[color.colorRange][2])
 
 while True:
-    #make a copy of each color object for checking later
     
+
     for color in [colorA, colorB]:
         changes = False
+        #make a copy of each color object for checking later
         oldColor = color.copy()
-        each.syncTrackBars()
+        color.syncTrackBars()
         
+        # if the color range slider has moved update the hue range and the sliders
         if oldColor.colorRange != color.colorRange:
-            color.lower[0]=
+            color.setRangeDefault()
+            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
+            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
+            changes=True
+            
+        if changes:
+            # update the color swatch
+            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                        colorRange=color.defaultRanges[color.colorRange][2])
+
         
         
     if cv2.waitKey(1) & 0xFF == ord('Q'): 
@@ -227,10 +238,15 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[20]:
+# In[9]:
 
+print colorA.defaultRanges
 print colorA.colorRange
+print colorA.lower
+print colorA.upper
 print colorB.colorRange
+print colorB.lower
+print colorB.upper
 
 
 # In[ ]:
