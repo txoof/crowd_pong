@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[15]:
 
 import cv2
 import numpy as np
@@ -172,14 +172,18 @@ class colorHSV:
 
 class cvFrame:
     
-    def __init__(self, videoDev = 0):
+    def __init__(self, videoDev = 0, frameWidth = 500):
         '''create a frame object that holds all of the frame, hsv frame and mask data for a filter
+        videoDev - numeration for video capture device; 0 is default
+        frameWidth - width in px of video capture; 500 is default
         frame - cv2.VideoCapture(<video device>)
         name - human readable name for refference 
         hsvFrame - frame converted into HSV space
         mask - a mask calculated based on properties passed
+        result - the result of a bitwise_and of the frame and the mask
+        
         '''
-        self.cap = cv2.VideoCapture(videoDev)
+        self.cap = cv2.VideoCapture(videoDev, frameWidth)
         #_, self.frame = self.cap.read()
         self.frame = self.readFrame()
         self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -187,9 +191,14 @@ class cvFrame:
         self.result = self.calcRes()
     
     # ideally this should update the HSV frame as well.  Don't know how to make that happen
-    def readFrame(self):
+    def readFrame(self, width = 500):
         '''update the stored frame from the video capture device'''
-        _, self.frame = self.cap.read() 
+        #_, self.frame = self.cap.read() 
+        _, tempFrame= self.cap.read()
+        r = float(width) / tempFrame.shape[1]
+        dim = (int(width), int(tempFrame.shape[0] * r))
+        resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
+        self.frame = resizedFrame
         return self.frame
         
     def cvtHSV(self):
@@ -251,7 +260,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[ ]:
+# In[16]:
 
 # init variables
 
@@ -378,11 +387,19 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)    
 
 
-# In[ ]:
+# In[3]:
 
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[10]:
+
+a = 500
+a = a + 0.0
+print type(a)
+print a, int(a)
 
 
 # In[ ]:
@@ -498,4 +515,16 @@ cv2.waitKey(1)
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[14]:
+
+a=500
+
+print type(float(a))
+
+
+# In[ ]:
+
+prin
 
