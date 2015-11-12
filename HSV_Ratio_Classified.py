@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[23]:
 
 import cv2
 import numpy as np
@@ -204,6 +204,7 @@ class cvFrame:
     def calcMask(self, lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
         '''calculate a mask based on two np.array objects with HSV values'''
         self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
+        self.nonZero = cv2.countNonZero(self.mask)
         return self.mask
     
     def calcRes(self):
@@ -225,35 +226,155 @@ def colorSwatch(swatchColor = (255, 0, 255), xDim = 800, yDim = 100):
     cv2.rectangle(img, (0, 0), (xDim, yDim), swatchColor, -1) 
     return img
 
- 
+# add branch to detect "out of range"
 def updateControlWindow(name, midBGRcolor, colorRange='' ):
+    '''update the control pannel windows with color swatches and text'''
     img = colorSwatch(swatchColor = midBGRcolor)
-    img = addText(img, textColor = (255, 255, 255), text = 'aproximate middle of hue range')
-    img = addText(img, textColor = (255, 255, 255), text = 'color range: ' + colorRange, position = (10, 50))
-    img = addText(img, textColor = (255, 255, 255), text = name, position = (10, 75))
+    if midBGRcolor == (0, 0, 0):
+        img = addText(img, text = 'Negative Hue Difference - OUT OF RANGE!')
+    else:
+        img = addText(img, textColor = (255, 255, 255), text = 'Aproximate middle color of hue range')
+        img = addText(img, textColor = (255, 255, 255), text = 'Color range: ' + colorRange, position = (10, 50))
+        img = addText(img, textColor = (255, 255, 255), text = name, position = (10, 75))
     cv2.imshow(name, img)
     #return img
 
 
-# In[4]:
+# In[29]:
+
+# init variables
+
+# color channels
+colorA = colorHSV('UP - Green')
+colorB = colorHSV('DOWN - Violet')
+channels = [colorA, colorB]
+
+# video stream device
+videoDev = 0
+# live frame object
+myFrame = cvFrame(0)
+#pixel count
+pixelCount = {}
+masks = {}
+
+# default settings
+pause = False
+displayOff = False
+
+# init trackbars for each channel
+for color in channels:
+    color.createTrackBars()
+    updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                        colorRange=color.defaultRanges[color.colorRange][2])
+    
+# begin looping until user quits
+while True:
+    
+    ######FIXME I broke live updating in this version.  WTF?
+    
+    
+    # capture key presses & act on them
+    keyPress = cv2.waitKey(1)
+    # pause live display, destroy windows, display pause message
+    if keyPress & 0xFF == ord ('p'):
+        pause = True
+        displayOff = True
+    # quit and cleanup    
+    if keyPress & 0xFF == ord ('Q'):
+        print 'we out.'
+        break
+    # unpause     
+    if keyPress & 0xFF == ord ('u'):
+        pause = False
+        displayOff = False
+    #reset the keypress variable
+    keyPress=False    
+    
+    # check for changes in trackbar
+    # update control panels and color swatches
+    # calculate the mask for each channel
+    
+    for color in channels:
+        changes = False
+        #make a copy of the color object for checking later 
+        oldColor = color.copy()
+        # check with the openCV HighGUI for changes on the trackbars
+        color.syncTrackBars()
+        
+        # if the color range slider has moved update the hue range and the sliders
+        if oldColor.colorRange != color.colorRange:
+            color.setRangeDefault()
+            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
+            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
+            changes=True
+        
+        # if the hue sliders have moved, update color swatch
+        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
+            changes=True
+        
+        # update the windows if only if things have changed
+        if changes:
+            # update the color swatch attached to each control window
+            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                        colorRange=color.defaultRanges[color.colorRange][2])
+        
+        masks[color.name] = myFrame.calcMask(color.lower, color.upper)
+        pixelCount[color.name] = myFrame.nonZero
+
+    # pause live updating and destroy some windows to save memory
+    if pause and displayOff:
+        pauseFrame = myFrame.frame
+        # destroy unneeded windows
+        for color in channels:
+            cv2.destroyWindow(color.name)
+        # add pause text to live window
+        addText(pauseFrame, 'Live display paused (calculations continue).')
+        addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
+        addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
+        cv2.imshow('Live', pauseFrame)
+        # unset pause condition
+        pause = False       
+        
+    if not displayOff:
+        cv2.imshow('Live', myFrame.frame)
+
+
+    
+    # calculate the resultant image for each channel
+    # display live, result channels or pause message
+# destroy all windows
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)    
+
+
+# In[28]:
+
+print masks
+for each in masks:
+    print each
+
+
+# In[8]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
 
 #video device
 videoDev = 0
-# create a fame capture varaible
-#capFrame = cv2.VideoCapture(videoDev)
+# control default display output
+displayOff = False   
+# create a fame capture object
 myFrame = cvFrame(0)
+#pixel count variable
+count = {}
 
 # recurse each of the set colors and create trackbars
 for color in [colorA, colorB]:
     color.createTrackBars()
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
-# control display output
-displayOff = False    
-
+    
 while True:
    
     # capture key presses and do stuff
@@ -271,7 +392,7 @@ while True:
         if keyPress & 0xFF == ord ('u'):
             print 'unpause!'
             pause = False
-            
+            displayOff = False
         keyPress=False
     
     
@@ -297,14 +418,16 @@ while True:
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
 
-
     
-    # update the mask and resultant frame each cycle
+    #this is kind of broken, the mask is recalculated for each loop, but not saved
+    
+    # update the mask and pixel count each cycle
     for color in [colorA, colorB]:
         # update the mask
         myFrame.calcMask(color.lower, color.upper)
+        count[color.name] = myFrame.nonZero
     
-    # destroy undeeded windows when display has been paused
+    # destroy undeeded windows & display a message when display has been paused
     if displayOff and pause:
         pauseFrame = myFrame.frame
         for color in [colorA, colorB]:
@@ -314,28 +437,63 @@ while True:
         addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
         addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
         cv2.imshow('Live', pauseFrame)
+        # unset pause condition
+        pause = False
     
     if not displayOff:
         # update the captured frame every round
         myFrame.readFrame()
         myFrame.cvtHSV()
-        # show the live frame
+        # show the live frame with added text
+        addText(myFrame.frame, text = 'raw pixel count: ' 
+                + str(count[colorA.name]) + ':' + str(count[colorB.name]))
         cv2.imshow('Live', myFrame.frame)
         for color in [colorA, colorB]:
             # update the result frame
             myFrame.calcRes()
+            # add relevant information to frame
+            addText(myFrame.result, text = 'lower: ' + str(color.lower))
+            addText(myFrame.result, text = 'upper: ' + str(color.upper), position = (10, 60))
             # show the result frame
             cv2.imshow(color.name, myFrame.result)
-
+     
     
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
+# In[3]:
+
+print count
+
+
 # In[ ]:
 
+import random
+count = {}
+for color in [colorA, colorB]:
+    count[color.name] = random.random()
+    
+    
 
+
+# In[36]:
+
+tel={'jack': 56}
+print tel
+print count
+print count['UP - green']
+
+
+# In[17]:
+
+print random.random()
+
+
+# In[15]:
+
+help (random.Random.seed())
 
 
 # In[ ]:
