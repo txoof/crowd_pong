@@ -235,7 +235,7 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 
-# In[2]:
+# In[4]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
@@ -251,13 +251,28 @@ for color in [colorA, colorB]:
     color.createTrackBars()
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
+# control display output
+displayOff = False    
 
-
-    
 while True:
-    # this method does not work; the video captrure stutters badly
-    #myFrame = cvFrame(cv2.VideoCapture(videoDev).read())
-#    myFrame = cvFrame(capFrame.read())
+   
+    # capture key presses and do stuff
+    keyPress = cv2.waitKey(1)
+    if keyPress:
+        if keyPress & 0xFF == ord ('p'):
+            print 'pause!'
+            pause = True
+            displayOff = True
+            
+        if keyPress & 0xFF == ord ('Q'):
+            print 'we out.'
+            break
+            
+        if keyPress & 0xFF == ord ('u'):
+            print 'unpause!'
+            pause = False
+            
+        keyPress=False
     
     
     for color in [colorA, colorB]:
@@ -282,33 +297,36 @@ while True:
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
 
-    # update the captured frame every round
-    myFrame.readFrame()
-    myFrame.cvtHSV()
-    # show the live frame
-    cv2.imshow('Live', myFrame.frame)
+
     
     # update the mask and resultant frame each cycle
     for color in [colorA, colorB]:
         # update the mask
         myFrame.calcMask(color.lower, color.upper)
-        # update the result frame
-        myFrame.calcRes()
-        cv2.imshow(color.name, myFrame.result)
     
-    # capture key presses and do stuff
-    keyPress = cv2.waitKey(1)
-    if keyPress:
-        if keyPress & 0xFF == ord ('p'):
-            print 'pause!'
-            
-        if keyPress & 0xFF == ord ('Q'):
-            print 'we out.'
-            break
-            
-        if keyPress & 0xFF == ord ('u'):
-            print 'unpause!'
-        keyPress=False
+    # destroy undeeded windows when display has been paused
+    if displayOff and pause:
+        pauseFrame = myFrame.frame
+        for color in [colorA, colorB]:
+            cv2.destroyWindow(color.name)
+        # add text to live window
+        addText(pauseFrame, 'Live display paused (calculations continue).')
+        addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
+        addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
+        cv2.imshow('Live', pauseFrame)
+    
+    if not displayOff:
+        # update the captured frame every round
+        myFrame.readFrame()
+        myFrame.cvtHSV()
+        # show the live frame
+        cv2.imshow('Live', myFrame.frame)
+        for color in [colorA, colorB]:
+            # update the result frame
+            myFrame.calcRes()
+            # show the result frame
+            cv2.imshow(color.name, myFrame.result)
+
     
 myFrame.release()
 cv2.destroyAllWindows()
