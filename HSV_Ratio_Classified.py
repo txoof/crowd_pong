@@ -9,7 +9,7 @@ import re
 import copy
 
 
-# In[27]:
+# In[36]:
 
 #Classes
 class colorHSV:
@@ -164,14 +164,19 @@ class colorHSV:
         if colorDelta < 0:
             midHSVcolor = np.uint8([[[0, 0, 0]]])
         else:    
-            midHSVcolor = np.uint8([[[self.lower[0] + (self.upper[0] - self.lower[0])//2, 255, 255]]])
+            midHSVcolor = np.uint8([[[self.lower[0] + (colorDelta)//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
+        print self.name, self.lower, self.upper, midBGRcolor
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
 
         
     def copy(self):
         '''make a duplicate object'''
         return copy.deepcopy(self)
+    
+    def hasChanged(self):
+        '''compare self to a copy and if it has changed'''
+        pass
 
 def adjust(x):
     pass
@@ -198,11 +203,11 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 
-# In[30]:
+# In[38]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
-# recurse each of the set colors create trackbars
+# recurse each of the set colors and create trackbars
 for color in [colorA, colorB]:
     color.createTrackBars()
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
@@ -226,7 +231,7 @@ while True:
         
         # if the HSV sliders have moved, update color swatch
         # something is broken with the calculation of the mid point - upper slider does not work
-        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[1] != color.upper[1]):
+        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
             changes=True
         
         if changes:
@@ -243,7 +248,7 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[29]:
+# In[35]:
 
 print colorA.defaultRanges
 print colorA.colorRange
