@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[26]:
 
 import cv2
 import numpy as np
@@ -9,7 +9,7 @@ import re
 import copy
 
 
-# In[21]:
+# In[27]:
 
 #Classes
 class colorHSV:
@@ -198,7 +198,7 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 
-# In[24]:
+# In[30]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
@@ -223,7 +223,12 @@ while True:
             cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
             cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
             changes=True
-            
+        
+        # if the HSV sliders have moved, update color swatch
+        # something is broken with the calculation of the mid point - upper slider does not work
+        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[1] != color.upper[1]):
+            changes=True
+        
         if changes:
             # update the color swatch
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
@@ -238,7 +243,7 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[9]:
+# In[29]:
 
 print colorA.defaultRanges
 print colorA.colorRange
