@@ -260,7 +260,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[28]:
+# In[29]:
 
 # init variables
 
@@ -379,7 +379,7 @@ while True:
         addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
         cv2.imshow(colorA.name, resA)
         cv2.imshow(colorB.name, resB)
-           addText(myFrame.frame, text = str(outputValue))
+        addText(myFrame.frame, text = str(outputValue))
         cv2.imshow('Live', myFrame.frame)
 
     
