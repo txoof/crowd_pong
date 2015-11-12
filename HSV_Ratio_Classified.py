@@ -252,15 +252,15 @@ def ratio(countA, countB):
     if countA==countB:
         return(0)
     if countA > countB:
-        # give a positive number
-        percent=(countA-countB)/countA
+        # give a negative number
+        percent=-1*((countA-countB)/float(countA))
     if countA < countB:
-        #give a negative number
-        percent=-1*((countB-countA)/countB)
+        #give a positve number
+        percent=1*((countB-countA)/float(countB))
     return(percent)
 
 
-# In[16]:
+# In[28]:
 
 # init variables
 
@@ -344,7 +344,11 @@ while True:
         # calculate the masks and pixel count 
         masks[color.name] = myFrame.calcMask(color.lower, color.upper)
         pixelCount[color.name] = myFrame.nonZero
-
+    
+    # calculate the ratio of colors in terms of a value between -1 and 1
+    outputValue = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
+    print outputValue
+    
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
         pauseFrame = myFrame.frame
@@ -362,11 +366,6 @@ while True:
     # calculate the resultant image for each channel
     # display live, result channels or pause message
     if not displayOff:
-        colorRatio = 'Color Ratio: '
-        for color in channels:
-            colorRatio = colorRatio + str(pixelCount[color.name]) + ' '
-            addText(myFrame.frame, text = colorRatio)
-        cv2.imshow('Live', myFrame.frame)
         # FIXME! Hack that does not use the class
         # I can't figure out how to do this using the class methods I have built.  
         # I would rather display each result frame from within a for loop like everything else
@@ -380,6 +379,9 @@ while True:
         addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
         cv2.imshow(colorA.name, resA)
         cv2.imshow(colorB.name, resB)
+           addText(myFrame.frame, text = str(outputValue))
+        cv2.imshow('Live', myFrame.frame)
+
     
 # destroy all windows
 myFrame.release()
@@ -387,7 +389,7 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)    
 
 
-# In[3]:
+# In[26]:
 
 myFrame.release()
 cv2.destroyAllWindows()
