@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -239,8 +239,19 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     cv2.imshow(name, img)
     #return img
 
+def ratio(countA, countB):
+    if countA==countB:
+        return(0)
+    if countA > countB:
+        # give a positive number
+        percent=(countA-countB)/countA
+    if countA < countB:
+        #give a negative number
+        percent=-1*((countB-countA)/countB)
+    return(percent)
 
-# In[7]:
+
+# In[ ]:
 
 # init variables
 
@@ -342,6 +353,10 @@ while True:
     # calculate the resultant image for each channel
     # display live, result channels or pause message
     if not displayOff:
+        colorRatio = 'Color Ratio: '
+        for color in channels:
+            colorRatio = colorRatio + str(pixelCount[color.name]) + ' '
+            addText(myFrame.frame, text = colorRatio)
         cv2.imshow('Live', myFrame.frame)
         # FIXME! Hack that does not use the class
         # I can't figure out how to do this using the class methods I have built.  
@@ -363,14 +378,14 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)    
 
 
-# In[4]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[8]:
+# In[ ]:
 
 colorA = colorHSV('UP - green')
 colorB = colorHSV('DOWN - violet')
@@ -478,7 +493,7 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[6]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
