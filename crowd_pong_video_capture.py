@@ -1,14 +1,20 @@
 
 # coding: utf-8
 
-# In[15]:
+# In[1]:
 
 import cv2
 import numpy as np
 import re
 import copy
+from websocket import create_connection
 
 #Classes
+class outputValue:
+    '''class for recording the float output value from the video sampling'''
+    def __init__(self):
+        self.value = 0.0
+    
 class colorHSV:
     '''Form a range of values for HSV colorspace filtering based on color:
     
@@ -183,7 +189,7 @@ class cvFrame:
         result - the result of a bitwise_and of the frame and the mask
         
         '''
-        self.cap = cv2.VideoCapture(videoDev, frameWidth)
+        self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
         self.frame = self.readFrame()
         self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -260,7 +266,8 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[29]:
+# In[2]:
+
 
 # init variables
 
@@ -277,19 +284,25 @@ myFrame = cvFrame(0)
 pixelCount = {}
 masks = {}
 
+#output value
+output = outputValue
+
 # default settings
 pause = False
 displayOff = False
+
+# create a connection to the web socket
+ws = create_connection("ws://localhost:9000/ws")
 
 # init trackbars for each channel
 for color in channels:
     color.createTrackBars()
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
-    
+
 # begin looping until user quits
 while True: 
-  
+
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
     # pause live display, destroy windows, display pause message
@@ -299,6 +312,10 @@ while True:
     # quit and cleanup    
     if keyPress & 0xFF == ord ('Q'):
         print 'we out.'
+        # destroy all windows and release video
+        myFrame.release()
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)    
         break
     # unpause     
     if keyPress & 0xFF == ord ('u'):
@@ -306,16 +323,16 @@ while True:
         displayOff = False
     #reset the keypress variable
     keyPress=False    
-    
+
     # check for changes in trackbar
     # update control panels and color swatches
     # update live frame 
     # calculate the mask for each channel
-    
+
     # capture a frame and convert to HSV space
     myFrame.readFrame()
     myFrame.cvtHSV()
-    
+
     # loop over each channel
     for color in channels:
         changes = False
@@ -323,32 +340,33 @@ while True:
         oldColor = color.copy()
         # check with the openCV HighGUI for changes on the trackbars
         color.syncTrackBars()
-        
+
         # if the color range slider has moved update the hue range and the sliders
         if oldColor.colorRange != color.colorRange:
             color.setRangeDefault()
             cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
             cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
             changes=True
-        
+
         # if the hue sliders have moved, update color swatch
         if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
             changes=True
-        
+
         # update the windows if only if things have changed
         if changes:
             # update the color swatch attached to each control window
             updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
-            
+
         # calculate the masks and pixel count 
         masks[color.name] = myFrame.calcMask(color.lower, color.upper)
         pixelCount[color.name] = myFrame.nonZero
-    
+
     # calculate the ratio of colors in terms of a value between -1 and 1
-    outputValue = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
-    print outputValue
+    output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
+    ws.send(str(output.value))
     
+
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
         pauseFrame = myFrame.frame
@@ -362,7 +380,7 @@ while True:
         cv2.imshow('Live', pauseFrame)
         # unset pause condition
         pause = False       
-   
+
     # calculate the resultant image for each channel
     # display live, result channels or pause message
     if not displayOff:
@@ -379,137 +397,11 @@ while True:
         addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
         cv2.imshow(colorA.name, resA)
         cv2.imshow(colorB.name, resB)
-        addText(myFrame.frame, text = str(outputValue))
+        addText(myFrame.frame, text = str(output.value))
         cv2.imshow('Live', myFrame.frame)
 
-    
-# destroy all windows
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)    
 
 
-# In[26]:
-
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)
-
-
-# In[10]:
-
-a = 500
-a = a + 0.0
-print type(a)
-print a, int(a)
-
-
-# In[ ]:
-
-colorA = colorHSV('UP - green')
-colorB = colorHSV('DOWN - violet')
-
-#video device
-videoDev = 0
-# control default display output
-displayOff = False   
-# create a fame capture object
-myFrame = cvFrame(0)
-#pixel count variable
-count = {}
-
-# recurse each of the set colors and create trackbars
-for color in [colorA, colorB]:
-    color.createTrackBars()
-    updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                        colorRange=color.defaultRanges[color.colorRange][2])
-    
-while True:
-   
-    # capture key presses and do stuff
-    keyPress = cv2.waitKey(1)
-    if keyPress:
-        if keyPress & 0xFF == ord ('p'):
-            print 'pause!'
-            pause = True
-            displayOff = True
-            
-        if keyPress & 0xFF == ord ('Q'):
-            print 'we out.'
-            break
-            
-        if keyPress & 0xFF == ord ('u'):
-            print 'unpause!'
-            pause = False
-            displayOff = False
-        keyPress=False
-    
-    
-    for color in [colorA, colorB]:
-        changes = False
-        #make a copy of each color object for checking later
-        oldColor = color.copy()
-        color.syncTrackBars()
-        
-        # if the color range slider has moved update the hue range and the sliders
-        if oldColor.colorRange != color.colorRange:
-            color.setRangeDefault()
-            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
-            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
-            changes=True
-        
-        # if the HSV sliders have moved, update color swatch
-        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
-            changes=True
-        
-        if changes:
-            # update the color swatch
-            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                        colorRange=color.defaultRanges[color.colorRange][2])
-
-    
-    #this is kind of broken, the mask is recalculated for each loop, but not saved
-    
-    # update the mask and pixel count each cycle
-    for color in [colorA, colorB]:
-        # update the mask
-        myFrame.calcMask(color.lower, color.upper)
-        count[color.name] = myFrame.nonZero
-    
-    # destroy undeeded windows & display a message when display has been paused
-    if displayOff and pause:
-        pauseFrame = myFrame.frame
-        for color in [colorA, colorB]:
-            cv2.destroyWindow(color.name)
-        # add text to live window
-        addText(pauseFrame, 'Live display paused (calculations continue).')
-        addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
-        addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
-        cv2.imshow('Live', pauseFrame)
-        # unset pause condition
-        pause = False
-    
-    if not displayOff:
-        # update the captured frame every round
-        myFrame.readFrame()
-        myFrame.cvtHSV()
-        # show the live frame with added text
-        addText(myFrame.frame, text = 'raw pixel count: ' 
-                + str(count[colorA.name]) + ':' + str(count[colorB.name]))
-        cv2.imshow('Live', myFrame.frame)
-        for color in [colorA, colorB]:
-            # update the result frame
-            myFrame.calcRes()
-            # add relevant information to frame
-            addText(myFrame.result, text = 'lower: ' + str(color.lower))
-            addText(myFrame.result, text = 'upper: ' + str(color.upper), position = (10, 60))
-            # show the result frame
-            cv2.imshow(color.name, myFrame.result)
-     
-    
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)
 
 
 # In[ ]:
@@ -517,16 +409,4 @@ cv2.waitKey(1)
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[14]:
-
-a=500
-
-print type(float(a))
-
-
-# In[ ]:
-
-prin
 

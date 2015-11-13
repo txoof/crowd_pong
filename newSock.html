@@ -14,7 +14,7 @@
         websocket.onerror = function(evt) { onError(evt) };
     }
     function onOpen(evt) { writeToScreen("CONNECTED");
-        doSend("WebSocket rocks");
+        doSend(".");
     }
     function onClose(evt) { writeToScreen("DISCONNECTED");
     }

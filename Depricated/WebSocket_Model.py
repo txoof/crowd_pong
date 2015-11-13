@@ -1,12 +1,13 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 #Socket tester for python
 import time
 import cherrypy
 import random
+
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ws4py.messaging import TextMessage
@@ -14,6 +15,9 @@ from ws4py.messaging import TextMessage
 cherrypy.config.update({'server.socket_port': 9000})
 WebSocketPlugin(cherrypy.engine).subscribe()
 cherrypy.tools.websocket = WebSocketTool()
+
+def printStuff():
+    return str((2*random.random())-1)
 
 class Root(object):
     @cherrypy.expose
@@ -36,7 +40,8 @@ class myHandler(WebSocket):
         cherrypy.engine.publish('websocket-broadcast', TextMessage(message.data))
         while message.data != 99:
             RGratio = (2*random.random()-1)
-            cherrypy.engine.publish('websocket-broadcast',TextMessage(str(RGratio)))
+            #cherrypy.engine.publish('websocket-broadcast', TextMessage(message))
+            cherrypy.engine.publish('websocket-broadcast',TextMessage(printStuff()))
             time.sleep(0.4)
     def closed(self, code, reason="No reason... just closed."):
         cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
@@ -46,14 +51,21 @@ class myHandler(WebSocket):
 cherrypy.quickstart(Root(), '/', config={'/ws': {'tools.websocket.on': True,
                                                  'tools.websocket.handler_cls': myHandler}})
 
+
+
 '''while True:
     cherrypy.engine.publish('websocket-broadcast',TextMessage("Hellow wuld"))
     time.sleep(10)'''
 
 
-# In[1]:
+# In[ ]:
 
-get_ipython().magic(u'who')
+myHandler.received_message('hello world')
+
+
+# In[ ]:
+
+cherrypy.engine.stop()
 
 
 # In[ ]:
