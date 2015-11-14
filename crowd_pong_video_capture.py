@@ -200,7 +200,10 @@ class cvFrame:
     def readFrame(self, width = 500):
         '''update the stored frame from the video capture device'''
         #_, self.frame = self.cap.read() 
-        _, tempFrame= self.cap.read()
+        try:
+            _, tempFrame= self.cap.read()
+        except Exception, e:
+            print 'error reading frame:', e
         r = float(width) / tempFrame.shape[1]
         dim = (int(width), int(tempFrame.shape[0] * r))
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
@@ -266,7 +269,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[2]:
+# In[ ]:
 
 
 # init variables

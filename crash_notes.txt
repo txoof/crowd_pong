@@ -1,0 +1,12 @@
+**14 November 21:06 - crash possibly due to dropped frame**
+
+$ python ./crowd_pong_video_capture.py
+Traceback (most recent call last):
+  File "./crowd_pong_video_capture.py", line 333, in <module>
+    myFrame.readFrame()
+  File "./crowd_pong_video_capture.py", line 204, in readFrame
+    r = float(width) / tempFrame.shape[1]
+AttributeError: 'NoneType' object has no attribute 'shape'
+Cleaned up camera.
+
+
