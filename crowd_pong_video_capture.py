@@ -411,7 +411,7 @@ while True:
         addText(myFrame.frame, text = str(output.value))
         cv2.imshow('Live', myFrame.frame)
         
-        #FIXME
+        #FIXME - this should be named better and destroyed on pause?
         # joined images - 
         cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
 
@@ -424,12 +424,6 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[17]:
-
-print type(colorA.midBGRcolor())
-print colorA.midBGRcolor()
 
 
 # In[ ]:
