@@ -49,6 +49,7 @@ rebroadcasts incoming messages to all connected clients.
 Issues:
 Causes video client to crash when a websocket client disconnects; requires a restart
 of video client and websocket server.
+Load newSock.html to view output
 
 **write_to_websocket**
 Requirements:
