@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[4]:
 
 import cv2
 import numpy as np
@@ -204,7 +204,13 @@ class cvFrame:
             _, tempFrame= self.cap.read()
         except Exception, e:
             print 'error reading frame:', e
-        r = float(width) / tempFrame.shape[1]
+        
+        # look for bad data in the frame
+        try:
+            r = float(width) / tempFrame.shape[1]
+        except Exception, e:
+            print 'bad tempFrame.shape data:', e
+            r = 1.0
         dim = (int(width), int(tempFrame.shape[0] * r))
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
         self.frame = resizedFrame
@@ -269,7 +275,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[ ]:
+# In[20]:
 
 
 # init variables
@@ -393,23 +399,40 @@ while True:
         # Unfortunately the mask is not recorded in the object so the last mask that is calculated
         # is saved and the result is based on ONLY that structure.
         resA = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorA.name])
-        addText(resA, text = 'lower: ' + str(colorA.lower))
-        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50))
+        addText(resA, text = 'lower: ' + str(colorA.lower), textColor = colorA.midBGRcolor())
+        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50), textColor = colorA.midBGRcolor())
+        addText(resA, text = 'UP', position = (10, 100), textColor = colorA.midBGRcolor())
         resB = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorB.name])
-        addText(resB, text = 'lower: ' + str(colorB.lower))
-        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
+        addText(resB, text = 'lower: ' + str(colorB.lower), textColor = colorB.midBGRcolor())
+        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50), textColor = colorB.midBGRcolor())
+        addText(resB, text = 'DOWN', position = (10, 100), textColor = colorB.midBGRcolor())
         cv2.imshow(colorA.name, resA)
         cv2.imshow(colorB.name, resB)
         addText(myFrame.frame, text = str(output.value))
         cv2.imshow('Live', myFrame.frame)
+        
+        #FIXME
+        # joined images - 
+        cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
 
 
 
 
 
-# In[ ]:
+# In[13]:
 
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[17]:
+
+print type(colorA.midBGRcolor())
+print colorA.midBGRcolor()
+
+
+# In[ ]:
+
+
 

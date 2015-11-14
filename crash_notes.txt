@@ -10,3 +10,21 @@ AttributeError: 'NoneType' object has no attribute 'shape'
 Cleaned up camera.
 
 
+** 14 November 22:19 - crash probably due to poorly formed frame**
+AttributeError                            Traceback (most recent call last)
+<ipython-input-2-d53380f6f923> in <module>()
+     61 
+     62     # capture a frame and convert to HSV space
+---> 63     myFrame.readFrame()
+     64     myFrame.cvtHSV()
+     65 
+
+<ipython-input-1-dc356cc82f9e> in readFrame(self, width)
+    200         except Exception, e:
+    201             print 'error reading frame:', e
+--> 202         r = float(width) / tempFrame.shape[1]
+    203         dim = (int(width), int(tempFrame.shape[0] * r))
+    204         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
+
+AttributeError: 'NoneType' object has no attribute 'shape'
+
