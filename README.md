@@ -2,6 +2,8 @@
 These scripts output a string of values between 1 and -1 on a web socket for 
 controling a pong-like game using relative ratios of two colors visible to a web-cam.
 
+Scripts provided as both ipython notebooks and python scripts.
+
 **crowd_pong_video_capture**
 Requirements: 
   * OpenCV 2.4 (On OS X: brew tap homebrew/science; brew install opencv)
