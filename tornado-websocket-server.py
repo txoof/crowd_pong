@@ -39,6 +39,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     self.write_message(message)
 
   def on_close(self):
+    self.connections.discard(self) #I think this was the killer line :) -JM
     print 'connection closed...'
 
 application = tornado.web.Application([
