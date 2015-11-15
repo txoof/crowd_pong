@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -186,8 +186,7 @@ class cvFrame:
         name - human readable name for refference 
         hsvFrame - frame converted into HSV space
         mask - a mask calculated based on properties passed
-        result - the result of a bitwise_and of the frame and the mask
-        
+        result - the result of a bitwise_and of the frame and the mask 
         '''
         self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
@@ -200,8 +199,17 @@ class cvFrame:
     def readFrame(self, width = 500):
         '''update the stored frame from the video capture device'''
         #_, self.frame = self.cap.read() 
-        _, tempFrame= self.cap.read()
-        r = float(width) / tempFrame.shape[1]
+        try:
+            _, tempFrame= self.cap.read()
+        except Exception, e:
+            print 'error reading frame:', e
+        
+        # look for bad data in the frame
+        try:
+            r = float(width) / tempFrame.shape[1]
+        except Exception, e:
+            print 'bad tempFrame.shape data:', e
+            r = 1.0
         dim = (int(width), int(tempFrame.shape[0] * r))
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
         self.frame = resizedFrame
@@ -236,7 +244,7 @@ def addText(img, text = 'your text here', position = (10, 25),
     cv2.putText(img, text, position, font, 1.25, textColor, 2)
     return img
 
-def colorSwatch(swatchColor = (255, 0, 255), xDim = 800, yDim = 100):
+def colorSwatch(swatchColor = (255, 0, 255), xDim = 700, yDim = 100):
     img = np.zeros((yDim, xDim, 3), np.uint8)
     cv2.rectangle(img, (0, 0), (xDim, yDim), swatchColor, -1) 
     return img
@@ -266,7 +274,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[2]:
+# In[ ]:
 
 
 # init variables
@@ -275,16 +283,21 @@ def ratio(countA, countB):
 colorA = colorHSV('UP - Green')
 colorB = colorHSV('DOWN - Violet')
 channels = [colorA, colorB]
+# display name for output window
+channelDisplayName = colorA.name + ' : ' + colorB.name
+liveDisplayName = 'Live'
 
 # video stream device
 videoDev = 0
 # live frame object
 myFrame = cvFrame(0)
-#pixel count
+#dictionary for saving the pixel count
 pixelCount = {}
+
+# dictionary for saving the calculated masks
 masks = {}
 
-#output value
+#output value to be sent to web socket
 output = outputValue
 
 # default settings
@@ -295,10 +308,25 @@ displayOff = False
 ws = create_connection("ws://localhost:9000/ws")
 
 # init trackbars for each channel
+# loop counter for placing windows
+windowCount = 0
 for color in channels:
     color.createTrackBars()
+    # shift each window over a bit
+    cv2.moveWindow(color.controlWinName, windowCount*400, 0)
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
+    windowCount += 1
+    
+#FIXME this is kludgy and I don't love it.  Perhaps a function/class to do this
+# record all created windows in a list, then move them all logically together 
+# right now they are moved as they are created (see above loop)
+# experiment for moving windows around 
+cv2.namedWindow(channelDisplayName)
+cv2.namedWindow(liveDisplayName)
+cv2.moveWindow(channelDisplayName, 0, 300)
+cv2.moveWindow(liveDisplayName, 0, 350)
+    
 
 # begin looping until user quits
 while True: 
@@ -371,8 +399,10 @@ while True:
     if pause and displayOff:
         pauseFrame = myFrame.frame
         # destroy unneeded windows
-        for color in channels:
-            cv2.destroyWindow(color.name)
+        # joined windows together
+        #for color in channels:
+        #    cv2.destroyWindow(color.name)
+        cv2.destroyWindow(channelDisplayName)
         # add pause text to live window
         addText(pauseFrame, 'Live display paused (calculations continue).')
         addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
@@ -389,16 +419,34 @@ while True:
         # I would rather display each result frame from within a for loop like everything else
         # Unfortunately the mask is not recorded in the object so the last mask that is calculated
         # is saved and the result is based on ONLY that structure.
+        
+        # generates resultant frames with the following information:
+        # Lower HSV, Upper HSV, indication of "direction" for paddle/bat in pong
         resA = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorA.name])
-        addText(resA, text = 'lower: ' + str(colorA.lower))
-        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50))
+        addText(resA, text = 'lower: ' + str(colorA.lower), textColor = colorA.midBGRcolor())
+        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50), textColor = colorA.midBGRcolor())
+        # direction of inflluence
+        addText(resA, text = 'UP', position = (10, 100), textColor = colorA.midBGRcolor())
+        
         resB = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorB.name])
-        addText(resB, text = 'lower: ' + str(colorB.lower))
-        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50))
-        cv2.imshow(colorA.name, resA)
-        cv2.imshow(colorB.name, resB)
+        addText(resB, text = 'lower: ' + str(colorB.lower), textColor = colorB.midBGRcolor())
+        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50), textColor = colorB.midBGRcolor())
+        # direction of influence
+        addText(resB, text = 'DOWN', position = (10, 100), textColor = colorB.midBGRcolor())
+       
+    
+        #cv2.imshow(colorA.name, resA)
+        #cv2.imshow(colorB.name, resB)
+        # join the resultant windows together horizontally (axis=1) and display
+        cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
+        
+        # add the output value to the live frame
         addText(myFrame.frame, text = str(output.value))
         cv2.imshow('Live', myFrame.frame)
+        
+        #FIXME - this should be named better and destroyed on pause?
+        # joined images - 
+        #cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
 
 
 
@@ -409,4 +457,9 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[ ]:
+
+
 

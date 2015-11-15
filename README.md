@@ -1,4 +1,12 @@
 # crowd_pong
+Crowd Pong (c) by Aaron Ciuffo
+
+Crowd Pong is licensed under a
+Creative Commons Atrribution-ShareAlike 3.0 Unported Licenses
+
+You should have received a copy of the license along with this
+work.  If not, see <http://creativecommons.org/licenses/by/3.0/>.
+
 These scripts output a string of values between 1 and -1 on a web socket for 
 controling a pong-like game using relative ratios of two colors visible to a web-cam.
 
@@ -49,9 +57,13 @@ Websocket server that listens on ws://localhost/9000/ws for messages and then
 rebroadcasts incoming messages to all connected clients.
 
 Issues:
-Causes video client to crash when a websocket client disconnects; requires a restart
+
+Resolved:
+X Causes video client to crash when a websocket client disconnects; requires a restart
 of video client and websocket server.
-Load newSock.html to view output
+Load newSock.html to view output 
+Thanks Joel Mortimer for fixing this!
+
 
 **write_to_websocket**
 Requirements:
@@ -62,4 +74,7 @@ Fucntion:
 Test client for sending simulated output to websocket server.  
 
 Issues:
-Crashes when another websocket client disconnects.
+
+Resolved Issues: 
+X Crashes when another websocket client disconnects.
+Thanks Joel Mortimer for fixing this!
