@@ -1,54 +1,40 @@
 
 # coding: utf-8
 
-# In[52]:
+# In[7]:
 
-# HSV Sampling
-import cv2
-import numpy as np
+import tornado.httpserver
+import tornado.websocket
+import tornado.ioloop
+import tornado.web
+import time
 
-class colorHSV:
-    #class that contains high and low values for Hue, Saturation, Value
-    def __init__(self, hue, sat, val, lower):
-        self.hue = hue
-        self.sat = sat
-        self.val = val
-        self.lower = lower
+class WSHandler(tornado.websocket.WebSocketHandler):
+    connections = set()
+
+    def open(self):
+         self.connections.add(self)
+         print 'New connection was opened'
+         self.write_message("Conn!")
+
+    def on_message(self, message):
+        print 'Got :', message
+        self.write_message("Received: " + message)
+        #[con.write_message('hi') for con in connections]
+
+
+    def on_close(self):
+        self.connections.remove(self)
+        print 'Conn closed...'
         
-# accept the value slider and pass the result to the HSV variable
-def adjust(x):
-    pass
+application = tornado.web.Application([
+  (r'/ws', WSHandler),
+])
 
-def camInit(videoDev):
-    return(cv2.VideoCapture(videoDev))
-
-def main():
-    #setup colors
-    colorA=colorHSV([0,255], [0,255], [0,255])
-    colorB=colorHSV([0,255], [0,255], [0,255])
-    print colorA.hue, colorB.hue
-    
-    #define video device
-    videoDev=0
-    
-    #start camera
-    cap=camInit(videoDev)
-    
-    #capture each frame
-    _, frame = cap.read()
-    #convert captured frame into HSV color space
-    hsv=cv2.cvtCo(frame, cv2.COLOR_BGR2HSV)
-    
-    maskA=cv2.inRange(hsv, colorA)
-    
-    
-    
-    
-
-
-# In[53]:
-
-main()
+if __name__ == "__main__":
+  http_server = tornado.httpserver.HTTPServer(application)
+  http_server.listen(9000)
+  tornado.ioloop.IOLoop.instance().start()
 
 
 # In[ ]:
