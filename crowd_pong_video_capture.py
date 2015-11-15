@@ -8,6 +8,8 @@ import numpy as np
 import re
 import copy
 from websocket import create_connection
+import websocket
+
 
 #Classes
 class outputValue:
@@ -204,7 +206,8 @@ class cvFrame:
         except Exception, e:
             print 'error reading frame:', e
         
-        # look for bad data in the frame
+        # look for bad data in the frame; if there's bad data simply set r =1 
+        # this is an ugly hack, but should allow things to continue running
         try:
             r = float(width) / tempFrame.shape[1]
         except Exception, e:
@@ -233,15 +236,64 @@ class cvFrame:
     def calcRes(self):
         self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
         return self.result
+
+class webSocket:
+    '''create a web socket connection
+    url - complete url in the form of ws://host:<port>/path
+    socket - websocket object
+    isConnected - boolean'''
+    def __init__(self, url):
+        self.url = url
+        self.isConnected = False
+        self.socket = self.connect
+        
+    def connect(self):
+        try:
+            self.socket = websocket.create_connection(self.url)
+            if self.socket.connected:
+                self.isConnected = True
+        except Exception, e:
+            self.isConnected = False
+            
+    def send(self, msg):
+        try:
+            self.socket.send(msg)
+        except Exception, e:
+            print 'error sending to socket:', e
+            print 'is the web socket server running?'
+            self.isConnected = False
+
+class msgHandler:
+    '''important messages to display on the live window'''
+    def __init__(self):
+        self.msgList = {}
+        self.foo = 'foobar'
+        
+    def addMsg(self, msgID, msg):
+        '''add messages to the list
+        msgID - unique identifyer for message
+        msg - message to be displayed'''
+        self.msgList[msgID] = msg
     
+    def delMsg(self, msgID):
+        '''remove messages to the list
+        msgID - unique identifyer for message'''
+        if msgID in self.msgList:
+            del self.msgList[msgID]
+        else:
+            pass
+            
 def adjust(x):
+    '''Place holder function for opencv.getTrackBar function.
+    Simply passes trackbar position to a variable'''
     pass
 
 def addText(img, text = 'your text here', position = (10, 25), 
-            textColor = (0, 255, 0)):
+            textColor = (0, 255, 0), size = 1.25, thickness = 1, lineType = 8):
+    # cv2.putText(img, text, org, fontFace, fontScale, color[, thickness[, lineType[, bottomLeftOrigin]]])
     '''Add text to an openCV image'''
-    font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-    cv2.putText(img, text, position, font, 1.25, textColor, 2)
+    font = cv2.FONT_HERSHEY_PLAIN
+    cv2.putText(img, text, position, font, size, textColor, thickness, lineType)
     return img
 
 def colorSwatch(swatchColor = (255, 0, 255), xDim = 700, yDim = 100):
@@ -263,6 +315,9 @@ def updateControlWindow(name, midBGRcolor, colorRange='' ):
     #return img
 
 def ratio(countA, countB):
+    '''calculate the ratio of colorA to colorB pixels and return a value between -1/1
+    colorA is defined as the negative color and colorB is defined as the positive color
+    method: (X-Y)/X where X is the larger number'''
     if countA==countB:
         return(0)
     if countA > countB:
@@ -272,6 +327,15 @@ def ratio(countA, countB):
         #give a positve number
         percent=1*((countB-countA)/float(countB))
     return(percent)
+
+def displayMessages(img, msgDict = {}):
+    '''display a list of important messages by adding them to the specified img'''
+    msgCounter = 0
+    for i in msgDict:
+        addText(img = img, text = msgDict[i], position = (10, 25+25*msgCounter))
+        msgCounter += 1
+    
+    return img
 
 
 # In[ ]:
@@ -303,9 +367,18 @@ output = outputValue
 # default settings
 pause = False
 displayOff = False
+socketURL = 'ws://localhost:9000/ws'
+# init the list of important display messages
+usrMessages = msgHandler()
+
 
 # create a connection to the web socket
-ws = create_connection("ws://localhost:9000/ws")
+ws = webSocket(socketURL)
+ws.connect()
+if not ws.isConnected:
+    print 'Websocket server connection failed. Is the server running on', socketURL, '?'
+    print 'Will attempt reconnect continiously'
+    usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
 
 # init trackbars for each channel
 # loop counter for placing windows
@@ -317,6 +390,10 @@ for color in channels:
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
     windowCount += 1
+
+# Count the loops for updating the paused display
+runningLoop = 0
+updateRate = 100
     
 #FIXME this is kludgy and I don't love it.  Perhaps a function/class to do this
 # record all created windows in a list, then move them all logically together 
@@ -331,12 +408,16 @@ cv2.moveWindow(liveDisplayName, 0, 350)
 # begin looping until user quits
 while True: 
 
+
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
     # pause live display, destroy windows, display pause message
     if keyPress & 0xFF == ord ('p'):
         pause = True
         displayOff = True
+        usrMessages.addMsg('pause.1', 'Live display paused')
+        usrMessages.addMsg('pause.2', '\'u\': unpause; shift+\'q\' to quit')
+        
     # quit and cleanup    
     if keyPress & 0xFF == ord ('Q'):
         print 'we out.'
@@ -349,6 +430,8 @@ while True:
     if keyPress & 0xFF == ord ('u'):
         pause = False
         displayOff = False
+        usrMessages.delMsg('pause.1')
+        usrMessages.delMsg('pause.2')
     #reset the keypress variable
     keyPress=False    
 
@@ -392,24 +475,44 @@ while True:
 
     # calculate the ratio of colors in terms of a value between -1 and 1
     output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
-    ws.send(str(output.value))
     
-
+    # check for websocket connection; attempt reconnect 
+    if ws.isConnected:
+        ws.send(str(output.value))
+        usrMessages.delMsg('socket.err')
+    else:
+        ws.connect()
+        usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
+    
+    if (runningLoop // updateRate >= 1) and displayOff:
+        print 'running loop is a multiple of', updateRate
+        # set pause to True to force and update of the pauseframe 
+        pause = True
+        # reset the running loop 
+        runningLoop = 0
+    elif runningLoop >= 1001:
+        # reset to prevent an overflow
+        runningLoop = 0
+    
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
+        
         pauseFrame = myFrame.frame
         # destroy unneeded windows
-        # joined windows together
-        #for color in channels:
-        #    cv2.destroyWindow(color.name)
         cv2.destroyWindow(channelDisplayName)
         # add pause text to live window
-        addText(pauseFrame, 'Live display paused (calculations continue).')
-        addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
-        addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
-        cv2.imshow('Live', pauseFrame)
+        #addText(pauseFrame, 'Live display paused (calculations continue).')
+        #addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
+        #addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
+ 
+        displayMessages(pauseFrame, usrMessages.msgList)
+        cv2.imshow(liveDisplayName, pauseFrame)
         # unset pause condition
+        
         pause = False       
+        
+        
+        
 
     # calculate the resultant image for each channel
     # display live, result channels or pause message
@@ -441,12 +544,16 @@ while True:
         cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
         
         # add the output value to the live frame
-        addText(myFrame.frame, text = str(output.value))
-        cv2.imshow('Live', myFrame.frame)
         
-        #FIXME - this should be named better and destroyed on pause?
-        # joined images - 
-        #cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
+
+        usrMessages.addMsg('output value', 'ratio: ' + str(output.value))
+        displayMessages(myFrame.frame, usrMessages.msgList)
+        cv2.imshow(liveDisplayName, myFrame.frame)
+        
+    
+    
+    #increment the loop counter (used to update the paused frame)
+    runningLoop += 1
 
 
 
@@ -457,9 +564,4 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[ ]:
-
-
 
