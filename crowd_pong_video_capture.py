@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[6]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -274,7 +274,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[7]:
+# In[2]:
 
 
 # init variables
@@ -285,6 +285,7 @@ colorB = colorHSV('DOWN - Violet')
 channels = [colorA, colorB]
 # display name for output window
 channelDisplayName = colorA.name + ' : ' + colorB.name
+liveDisplayName = 'Live'
 
 # video stream device
 videoDev = 0
@@ -307,10 +308,25 @@ displayOff = False
 ws = create_connection("ws://localhost:9000/ws")
 
 # init trackbars for each channel
+# loop counter for placing windows
+windowCount = 0
 for color in channels:
     color.createTrackBars()
+    # shift each window over a bit
+    cv2.moveWindow(color.controlWinName, windowCount*400, 0)
     updateControlWindow(color.controlWinName, color.midBGRcolor(), 
                         colorRange=color.defaultRanges[color.colorRange][2])
+    windowCount += 1
+    
+#FIXME this is kludgy and I don't love it.  Perhaps a function/class to do this
+# record all created windows in a list, then move them all logically together 
+# right now they are moved as they are created (see above loop)
+# experiment for moving windows around 
+cv2.namedWindow(channelDisplayName)
+cv2.namedWindow(liveDisplayName)
+cv2.moveWindow(channelDisplayName, 0, 300)
+cv2.moveWindow(liveDisplayName, 0, 350)
+    
 
 # begin looping until user quits
 while True: 
@@ -436,7 +452,7 @@ while True:
 
 
 
-# In[4]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
