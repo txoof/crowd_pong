@@ -8,6 +8,8 @@ import numpy as np
 import re
 import copy
 from websocket import create_connection
+import websocket
+
 
 #Classes
 class outputValue:
@@ -233,8 +235,32 @@ class cvFrame:
     def calcRes(self):
         self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
         return self.result
+
+class webSocket:
+    def __init__(self, url):
+        self.url = url
+        self.isConnected = False
+        self.socket = self.connect
+        
+    def connect(self):
+        try:
+            self.socket = websocket.create_connection(self.url)
+            if self.socket.connected:
+                self.isConnected = True
+        except Exception, e:
+            self.isConnected = False
+            
+    def send(self, msg):
+        try:
+            self.socket.send(msg)
+        except Exception, e:
+            print 'error sending to socket:', e
+            print 'is the web socket server running?'
+            self.isConnected = False
     
 def adjust(x):
+    '''Place holder function for opencv.getTrackBar function.
+    Simply passes trackbar position to a variable'''
     pass
 
 def addText(img, text = 'your text here', position = (10, 25), 
@@ -303,9 +329,21 @@ output = outputValue
 # default settings
 pause = False
 displayOff = False
+socketURL = 'ws://localhost:9000/ws'
 
 # create a connection to the web socket
-ws = create_connection("ws://localhost:9000/ws")
+ws = webSocket(socketURL)
+ws.connect()
+
+if not ws.isConnected:
+    print 'Websocket server connection failed. Is the server running on', socketURL
+
+#try:
+#    ws = create_connection("ws://localhost:9000/ws")
+#except Exception, e:
+#    print 'Error connecting to socket server. Is it running?'
+
+
 
 # init trackbars for each channel
 # loop counter for placing windows
@@ -392,9 +430,26 @@ while True:
 
     # calculate the ratio of colors in terms of a value between -1 and 1
     output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
-    ws.send(str(output.value))
     
-
+    # this fixes the crash, but does not reconnect after ws server is restarted
+    '''
+    try:
+        # errors are not handled here; causes crash if socket server dies
+        ws.send(str(output.value))
+    except Exception, e:
+        print 'error sending to websocket:', e
+        print 'recreating connection'
+        try:
+            ws.close()
+            ws.create_connection("ws://localhost:9000/ws")
+        except Exception, e2:
+            print 'error restablishing connection - restart socket server'
+    '''
+    if ws.isConnected:
+        ws.send(str(output.value))
+    else:
+        ws.connect()
+    
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
         pauseFrame = myFrame.frame
@@ -457,6 +512,110 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[ ]:
+
+print help(websocket.connect)
+ws = websocket.create_connection("ws://localhost:9000/ws")
+
+
+# In[ ]:
+
+class webSocket:
+    def __init__(self, url):
+        self.url = url
+        self.isConnected = False
+        self.socket = self.connect
+        
+    def connect(self):
+        try:
+            self.socket = websocket.create_connection(self.url)
+            if self.socket.connected:
+                self.isConnected = True
+        except Exception, e:
+            self.isConnected = False
+            
+    def send(self, msg):
+        try:
+            self.socket.send(msg)
+        except Exception, e:
+            print 'error sending to socket:', e
+            print 'is the web socket server running?'
+            self.isConnected = False
+            
+    
+            
+
+
+# In[ ]:
+
+mySocket = webSocket("ws://localhost:9000/ws")
+mySocket.connect()
+
+
+
+# In[ ]:
+
+if not mySocket.isConnected:
+    print 'socket is not connected, attempting to reconnect.'
+    try:
+        mySocket.connect()
+    except Exception, e:
+        print 'error connecting to web socket:', e
+else:
+    print mySocket.isConnected
+    mySocket.send('foobar')
+
+
+# In[ ]:
+
+try:
+    ws = websocket.create_connection("ws://localhost:9000/ws")
+except Exception, e:
+    print 'error connecting:', e
+    print 'will try again later'
+    ws.connected = False
+
+
+# In[ ]:
+
+print ws.connected
+
+
+# In[ ]:
+
+if not ws.connected:
+    try:
+        ws.connect("ws://localhost:9000/ws")
+    except Exception, e:
+        print 'error connecting:', e
+        print 'Is socket server running on port 9000?'
+else:
+    try:
+        ws.send('foobar')
+    except Exception, e:
+        print 'error:', e
+        ws.close()
+        try:
+            ws.connect("ws://localhost:9000/ws")
+        except Exception, e:
+            print 'could not reconnect:', e
+
+
+# In[ ]:
+
+ws = False
+
+
+# In[ ]:
+
+print help(ws)
+
+
+# In[ ]:
+
+ws.connected
 
 
 # In[ ]:
