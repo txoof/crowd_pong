@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import cv2
 import numpy as np
@@ -186,8 +186,7 @@ class cvFrame:
         name - human readable name for refference 
         hsvFrame - frame converted into HSV space
         mask - a mask calculated based on properties passed
-        result - the result of a bitwise_and of the frame and the mask
-        
+        result - the result of a bitwise_and of the frame and the mask 
         '''
         self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
@@ -275,7 +274,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[2]:
+# In[3]:
 
 
 # init variables
@@ -284,16 +283,20 @@ def ratio(countA, countB):
 colorA = colorHSV('UP - Green')
 colorB = colorHSV('DOWN - Violet')
 channels = [colorA, colorB]
+# display name for output window
+channelDisplayName = colorA.name + ' : ' + colorB.name
 
 # video stream device
 videoDev = 0
 # live frame object
 myFrame = cvFrame(0)
-#pixel count
+#dictionary for saving the pixel count
 pixelCount = {}
+
+# dictionary for saving the calculated masks
 masks = {}
 
-#output value
+#output value to be sent to web socket
 output = outputValue
 
 # default settings
@@ -380,8 +383,10 @@ while True:
     if pause and displayOff:
         pauseFrame = myFrame.frame
         # destroy unneeded windows
-        for color in channels:
-            cv2.destroyWindow(color.name)
+        # joined windows together
+        #for color in channels:
+        #    cv2.destroyWindow(color.name)
+        cv2.destroyWindow(channelDisplayName)
         # add pause text to live window
         addText(pauseFrame, 'Live display paused (calculations continue).')
         addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
@@ -398,16 +403,28 @@ while True:
         # I would rather display each result frame from within a for loop like everything else
         # Unfortunately the mask is not recorded in the object so the last mask that is calculated
         # is saved and the result is based on ONLY that structure.
+        
+        # generates resultant frames with the following information:
+        # Lower HSV, Upper HSV, indication of "direction" for paddle/bat in pong
         resA = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorA.name])
         addText(resA, text = 'lower: ' + str(colorA.lower), textColor = colorA.midBGRcolor())
         addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50), textColor = colorA.midBGRcolor())
+        # direction of inflluence
         addText(resA, text = 'UP', position = (10, 100), textColor = colorA.midBGRcolor())
+        
         resB = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorB.name])
         addText(resB, text = 'lower: ' + str(colorB.lower), textColor = colorB.midBGRcolor())
         addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50), textColor = colorB.midBGRcolor())
+        # direction of influence
         addText(resB, text = 'DOWN', position = (10, 100), textColor = colorB.midBGRcolor())
-        cv2.imshow(colorA.name, resA)
-        cv2.imshow(colorB.name, resB)
+       
+    
+        #cv2.imshow(colorA.name, resA)
+        #cv2.imshow(colorB.name, resB)
+        # join the resultant windows together horizontally (axis=1) and display
+        cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
+        
+        # add the output value to the live frame
         addText(myFrame.frame, text = str(output.value))
         cv2.imshow('Live', myFrame.frame)
         
