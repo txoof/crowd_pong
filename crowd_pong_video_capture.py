@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -274,7 +274,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[2]:
+# In[ ]:
 
 
 # init variables
