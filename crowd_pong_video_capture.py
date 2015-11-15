@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -275,7 +275,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[20]:
+# In[2]:
 
 
 # init variables
@@ -413,7 +413,7 @@ while True:
         
         #FIXME - this should be named better and destroyed on pause?
         # joined images - 
-        cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
+        #cv2.imshow('joined up', np.concatenate((resA, resB, myFrame.frame), axis = 1))
 
 
 
