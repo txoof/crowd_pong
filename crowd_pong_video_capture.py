@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -338,7 +338,7 @@ def displayMessages(img, msgDict = {}):
     return img
 
 
-# In[ ]:
+# In[2]:
 
 
 # init variables
