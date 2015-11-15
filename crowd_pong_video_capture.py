@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[6]:
 
 import cv2
 import numpy as np
@@ -244,7 +244,7 @@ def addText(img, text = 'your text here', position = (10, 25),
     cv2.putText(img, text, position, font, 1.25, textColor, 2)
     return img
 
-def colorSwatch(swatchColor = (255, 0, 255), xDim = 800, yDim = 100):
+def colorSwatch(swatchColor = (255, 0, 255), xDim = 700, yDim = 100):
     img = np.zeros((yDim, xDim, 3), np.uint8)
     cv2.rectangle(img, (0, 0), (xDim, yDim), swatchColor, -1) 
     return img
@@ -274,7 +274,7 @@ def ratio(countA, countB):
     return(percent)
 
 
-# In[3]:
+# In[7]:
 
 
 # init variables
@@ -436,7 +436,7 @@ while True:
 
 
 
-# In[13]:
+# In[4]:
 
 myFrame.release()
 cv2.destroyAllWindows()
