@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -337,8 +337,16 @@ def displayMessages(img, msgDict = {}):
     
     return img
 
+def sendCommand(websocket, command = '0.001', num = 10):
+    '''send a command num times to the websocket object'''
+    if websocket.isConnected:
+        for i in range(num):
+            ws.send(str(command))
+    
+    return
 
-# In[2]:
+
+# In[ ]:
 
 
 # init variables
@@ -361,13 +369,18 @@ pixelCount = {}
 # dictionary for saving the calculated masks
 masks = {}
 
-#output value to be sent to web socket
+#set output value to class outputValue; variable be sent to web socket
 output = outputValue
 
 # default settings
 pause = False
 displayOff = False
 socketURL = 'ws://localhost:9000/ws'
+
+# number of times to send a command message across the web socket
+# FIXME - speak to Jeron about this
+
+
 # init the list of important display messages
 usrMessages = msgHandler()
 
@@ -407,8 +420,7 @@ cv2.moveWindow(liveDisplayName, 0, 350)
 
 # begin looping until user quits
 while True: 
-
-
+    
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
     # pause live display, destroy windows, display pause message
@@ -426,12 +438,45 @@ while True:
         cv2.destroyAllWindows()
         cv2.waitKey(1)    
         break
-    # unpause     
+    
+    # unpause live display
     if keyPress & 0xFF == ord ('u'):
         pause = False
         displayOff = False
         usrMessages.delMsg('pause.1')
         usrMessages.delMsg('pause.2')
+        
+    ## play control ##
+    # restart game
+    if keyPress & 0xFF == ord ('R'):
+        sendCommand(command = '3', websocket = ws, num = 10)
+        usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Game')
+
+        
+    if keyPress & 0xFF == ord ('P'):
+        sendCommand(command = 4, websocket = ws, num = 10)
+        usrMessages.addMsg('info.'+str(runningLoop), 'Restart Point')
+        
+        
+    # calibration
+    if keyPress & 0xFF == ord ('C'):
+        sendCommand(command = '5', websocket = ws, num = 10)
+        usrMessages.addMsg('info.'+str(runningLoop), 'Restart Calibration')
+
+        
+    if keyPress & 0xFF == ord ('Z'):
+        sendCommand(command = '6', websocket = ws, num = 10)
+        usrMessages.addMsg('info.'+str(runningLoop), 'Retrun to Credits')
+        
+    if keyPress & 0xFF == ord ('h'):
+        usrMessages.addMsg('info.'+str(runningLoop+.1), 'R: restart game')
+        usrMessages.addMsg('info.'+str(runningLoop+.2), 'P: restart point')
+        usrMessages.addMsg('info.'+str(runningLoop+.3), 'C: restart calibration')
+        usrMessages.addMsg('info.'+str(runningLoop+.4), 'Z: return to credits')
+        usrMessages.addMsg('info.'+str(runningLoop+.5), 'Q: quit')
+        usrMessages.addMsg('info.'+str(runningLoop+.6), 'Z: return to credits')
+        usrMessages.addMsg('info.'+str(runningLoop+.7), 'p: pause live display')
+    
     #reset the keypress variable
     keyPress=False    
 
@@ -484,15 +529,31 @@ while True:
         ws.connect()
         usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
     
-    if (runningLoop // updateRate >= 1) and displayOff:
-        print 'running loop is a multiple of', updateRate
-        # set pause to True to force and update of the pauseframe 
-        pause = True
-        # reset the running loop 
-        runningLoop = 0
-    elif runningLoop >= 1001:
+    # updateloop
+    if (runningLoop % updateRate == 0): 
+        print 'cleaning out stuff'
+        #clean out "info" messages after every update period has passed 
+        for k in usrMessages.msgList.keys():
+            regexp = 'info.*'
+            m = re.search(regexp, k)
+            if m is not None:
+                usrMessages.delMsg(k)        
+        
+        #update the pause screen
+        if displayOff:
+            # set pause to True to force an update of the pauseframe 
+            pause = True
+            # reset the running loop 
+            runningLoop = 0
+            
+    if runningLoop >= 1001:
         # reset to prevent an overflow
         runningLoop = 0
+    
+    # FIXME
+    # add method for removing messages with the name "info" every 100 cycles or so
+    # 
+    
     
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
@@ -544,13 +605,9 @@ while True:
         cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
         
         # add the output value to the live frame
-        
-
-        usrMessages.addMsg('output value', 'ratio: ' + str(output.value))
+        usrMessages.msgList['output value'] = 'ratio: ' + str(output.value)
         displayMessages(myFrame.frame, usrMessages.msgList)
         cv2.imshow(liveDisplayName, myFrame.frame)
-        
-    
     
     #increment the loop counter (used to update the paused frame)
     runningLoop += 1
@@ -564,4 +621,38 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[ ]:
+
+myList = usrMessages.msgList
+print myList
+print usrMessages.msgList.keys()
+
+
+# In[ ]:
+
+usrMessages.msgList = myList
+
+
+# In[ ]:
+
+
+for k in usrMessages.msgList.keys():
+    regexp = 'info.*'
+    m = re.search(regexp, k)
+    if m is not None:
+        usrMessages.delMsg(k)
+
+print usrMessages.msgList
+
+
+# In[ ]:
+
+print 1200 % 100
+
+
+# In[ ]:
+
+
 
