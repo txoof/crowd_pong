@@ -351,18 +351,27 @@ def sendCommand(websocket, command = '0.001', num = 10):
 
 # init variables
 
+### Configuration Variables ###
+
 # color channels
 colorA = colorHSV('UP - Green')
 colorB = colorHSV('DOWN - Violet')
 channels = [colorA, colorB]
+
 # display name for output window
 channelDisplayName = colorA.name + ' : ' + colorB.name
 liveDisplayName = 'Live'
+# live frame object
+myFrame = cvFrame(0)
 
 # video stream device
 videoDev = 0
-# live frame object
-myFrame = cvFrame(0)
+
+#web Socket Server
+socketURL = 'ws://localhost:9000/ws'
+
+### Variable Inititialziation ###
+
 #dictionary for saving the pixel count
 pixelCount = {}
 
@@ -375,25 +384,22 @@ output = outputValue
 # default settings
 pause = False
 displayOff = False
-socketURL = 'ws://localhost:9000/ws'
-
-# number of times to send a command message across the web socket
-# FIXME - speak to Jeron about this
-
 
 # init the list of important display messages
 usrMessages = msgHandler()
 
-
-# create a connection to the web socket
+# create a connection to the web socket handler object
 ws = webSocket(socketURL)
-ws.connect()
-if not ws.isConnected:
-    print 'Websocket server connection failed. Is the server running on', socketURL, '?'
-    print 'Will attempt reconnect continiously'
-    usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
+
+# Count the loops for updating the paused display
+runningLoop = 0
+# frequency to update and clean displayed user messages
+updateRate = 100
+
+### Initialize Systems ###
 
 # init trackbars for each channel
+
 # loop counter for placing windows
 windowCount = 0
 for color in channels:
@@ -404,10 +410,6 @@ for color in channels:
                         colorRange=color.defaultRanges[color.colorRange][2])
     windowCount += 1
 
-# Count the loops for updating the paused display
-runningLoop = 0
-updateRate = 100
-    
 #FIXME this is kludgy and I don't love it.  Perhaps a function/class to do this
 # record all created windows in a list, then move them all logically together 
 # right now they are moved as they are created (see above loop)
@@ -419,9 +421,8 @@ cv2.moveWindow(liveDisplayName, 0, 350)
     
 
 # begin looping until user quits
-while True: 
-    
-    
+while True:     
+   
     ####FIXME - time to make this a class/sub?
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
@@ -453,22 +454,20 @@ while True:
     if keyPress & 0xFF == ord ('R'):
         sendCommand(command = '3', websocket = ws, num = 10)
         usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Game')
-
         
     if keyPress & 0xFF == ord ('P'):
         sendCommand(command = 4, websocket = ws, num = 10)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restart Point')
-        
+        usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Point')
         
     # calibration
     if keyPress & 0xFF == ord ('C'):
         sendCommand(command = '5', websocket = ws, num = 10)
         usrMessages.addMsg('info.'+str(runningLoop), 'Restart Calibration')
 
-        
+    # return to credits screen
     if keyPress & 0xFF == ord ('Z'):
         sendCommand(command = '6', websocket = ws, num = 10)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Retrun to Credits')
+        usrMessages.addMsg('info.'+str(runningLoop), 'Returning to Credits')
         
     if keyPress & 0xFF == ord ('h'):
         usrMessages.addMsg('info.'+str(runningLoop+.1), 'R: restart game')
@@ -531,9 +530,8 @@ while True:
         ws.connect()
         usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
     
-    # updateloop
+    # update the pause screen and clean out old info messages
     if (runningLoop % updateRate == 0): 
-        print 'cleaning out stuff'
         #clean out "info" messages after every update period has passed 
         for k in usrMessages.msgList.keys():
             regexp = 'info.*'
@@ -559,20 +557,12 @@ while True:
         pauseFrame = myFrame.frame
         # destroy unneeded windows
         cv2.destroyWindow(channelDisplayName)
-        # add pause text to live window
-        #addText(pauseFrame, 'Live display paused (calculations continue).')
-        #addText(pauseFrame, 'Press and hold "u" to unpause.', position = (10, 50))
-        #addText(pauseFrame, 'Hold "shift+q" to quit.', position = (10, 100))
- 
+        # display messages from the message handler
         displayMessages(pauseFrame, usrMessages.msgList)
         cv2.imshow(liveDisplayName, pauseFrame)
         # unset pause condition
-        
         pause = False       
-        
-        
-        
-
+             
     # calculate the resultant image for each channel
     # display live, result channels or pause message
     if not displayOff:
@@ -602,7 +592,7 @@ while True:
         # join the resultant windows together horizontally (axis=1) and display
         cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
         
-        # add the output value to the live frame
+        # add messages to the Live window 
         usrMessages.msgList['output value'] = 'ratio: ' + str(output.value)
         displayMessages(myFrame.frame, usrMessages.msgList)
         cv2.imshow(liveDisplayName, myFrame.frame)
@@ -619,4 +609,9 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[ ]:
+
+
 
