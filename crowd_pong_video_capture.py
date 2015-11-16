@@ -421,6 +421,8 @@ cv2.moveWindow(liveDisplayName, 0, 350)
 # begin looping until user quits
 while True: 
     
+    
+    ####FIXME - time to make this a class/sub?
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
     # pause live display, destroy windows, display pause message
@@ -521,7 +523,7 @@ while True:
     # calculate the ratio of colors in terms of a value between -1 and 1
     output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
     
-    # check for websocket connection; attempt reconnect 
+    # check for websocket connection and send the video output value
     if ws.isConnected:
         ws.send(str(output.value))
         usrMessages.delMsg('socket.err')
@@ -550,11 +552,7 @@ while True:
         # reset to prevent an overflow
         runningLoop = 0
     
-    # FIXME
-    # add method for removing messages with the name "info" every 100 cycles or so
-    # 
-    
-    
+       
     # pause live updating and destroy some windows to save memory
     if pause and displayOff:
         
@@ -609,7 +607,7 @@ while True:
         displayMessages(myFrame.frame, usrMessages.msgList)
         cv2.imshow(liveDisplayName, myFrame.frame)
     
-    #increment the loop counter (used to update the paused frame)
+    #increment the loop counter (used to update user information)
     runningLoop += 1
 
 
@@ -621,38 +619,4 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[ ]:
-
-myList = usrMessages.msgList
-print myList
-print usrMessages.msgList.keys()
-
-
-# In[ ]:
-
-usrMessages.msgList = myList
-
-
-# In[ ]:
-
-
-for k in usrMessages.msgList.keys():
-    regexp = 'info.*'
-    m = re.search(regexp, k)
-    if m is not None:
-        usrMessages.delMsg(k)
-
-print usrMessages.msgList
-
-
-# In[ ]:
-
-print 1200 % 100
-
-
-# In[ ]:
-
-
 
