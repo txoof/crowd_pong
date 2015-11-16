@@ -1,0 +1,9 @@
+Crowd Pong Play Checklist
+
+**Pre Play**
+[ ]   Start websocket server: tornado-websocket-server.py
+[ ]   Start crowd_pong_video_capture.py
+[ ]   Adjust HSV settings for UP and DOWN to
+[ ]   Start Jeron's Game
+
+
