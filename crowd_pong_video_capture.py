@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -346,7 +346,7 @@ def sendCommand(websocket, command = '0.001', num = 1):
     return
 
 
-# In[4]:
+# In[ ]:
 
 
 # init variables
