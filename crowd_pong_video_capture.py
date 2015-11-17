@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[2]:
 
 import cv2
 import numpy as np
@@ -337,7 +337,7 @@ def displayMessages(img, msgDict = {}):
     
     return img
 
-def sendCommand(websocket, command = '0.001', num = 10):
+def sendCommand(websocket, command = '0.001', num = 1):
     '''send a command num times to the websocket object'''
     if websocket.isConnected:
         for i in range(num):
@@ -452,21 +452,21 @@ while True:
     ## play control ##
     # restart game
     if keyPress & 0xFF == ord ('R'):
-        sendCommand(command = '3', websocket = ws, num = 10)
+        sendCommand(command = '3', websocket = ws)
         usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Game')
         
     if keyPress & 0xFF == ord ('P'):
-        sendCommand(command = 4, websocket = ws, num = 10)
+        sendCommand(command = 4, websocket = ws)
         usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Point')
         
     # calibration
     if keyPress & 0xFF == ord ('C'):
-        sendCommand(command = '5', websocket = ws, num = 10)
+        sendCommand(command = '5', websocket = ws)
         usrMessages.addMsg('info.'+str(runningLoop), 'Restart Calibration')
 
     # return to credits screen
     if keyPress & 0xFF == ord ('Z'):
-        sendCommand(command = '6', websocket = ws, num = 10)
+        sendCommand(command = '6', websocket = ws)
         usrMessages.addMsg('info.'+str(runningLoop), 'Returning to Credits')
         
     if keyPress & 0xFF == ord ('h'):
