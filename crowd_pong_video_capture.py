@@ -346,7 +346,7 @@ def sendCommand(websocket, command = '0.001', num = 1):
     return
 
 
-# In[ ]:
+# In[4]:
 
 
 # init variables
