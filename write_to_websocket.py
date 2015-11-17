@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 from websocket import create_connection
 import random
@@ -30,14 +30,6 @@ while True:
     count += 1
 ws.close
 
-
-# In[ ]:
-
-print random.random()
-print type (str(random.random()))
-
-
-# In[ ]:
 
 
 
