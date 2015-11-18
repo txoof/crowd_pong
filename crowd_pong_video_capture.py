@@ -307,12 +307,17 @@ class keyHandler:
         functionCall - function to execute based on keypress
         sendCommand - command to send to websocket server
         functionMap - map keypresses to functions
+        displayMsg - text to display in live window
+        msgType - type of message: info, 
+        
         '''
         self.keyPress = None
         self.keyPressDEC = 255
         self.keyPressCHR = None
         self.functionCall = doNothing()
         self.sendCommand = None
+        self.displayMsg = ''
+        self.msgType = ''
         self.functionMap = {
             'C': self.calibration,
             'h': self.printHelp,
@@ -334,31 +339,46 @@ class keyHandler:
        
         if self.keyPressCHR in self.functionMap:
             self.functionMap[self.keyPressCHR]()
-            
-        elif self.keyPressDEC == 255:
-            # reset the send command to none
+    
+        #elif self.keyPressDEC == 255:
+        # if the key is not in the function map reset
+        else:
+            # reset the send command to none 
             self.sendCommand = None
+            # reset the display text to ''
+            self.displayMsg = ''
+            self.msgType = ''
     
     
     def calibration(self):
-        print 'do calibration stuff'
+        self.sendCommand = '5'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        self.msgType = info
         
     def printHelp(self):
         for key in self.helpDict:
             print key, self.helpDict[key]
     
     def restartPoint(self):
-        print 'do restart point stuff'
+        self.sendCommand= '4'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        #self.displayMsg = 'Restart Point: Code ' + self.sendCommand
+        self.msgType = 'info'
     
     def quit(self):
         self.functionCall = doNothing()
         raise loopHalt
         
     def restartGame(self):
-        self.sendCommand = 3
+        self.sendCommand = '3'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        #self.displayMsg = 'Restart Game: Code ' + self.sendCommand
+        self.msgType = 'info'
         
     def credits(self):
-        print 'do credits stuff'
+        self.sendCommand = '6'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        self.msgType = 'info'
         
     def pauseDisplay(self):
         pass
@@ -426,14 +446,11 @@ def sendCommand(websocket, command = 'null', num = 1):
     if websocket.isConnected:
         for i in range(num):
             ws.send(str(command))
-    
+    # FIXME WTF is this for?  I don't think we return anything here.
     return
-
-
-def myCrap():
-    print 'This is some Crap!'
     
 def doNothing():
+    '''placeholder function that does nothing'''
     pass
 
 
@@ -456,7 +473,7 @@ liveDisplayName = 'Live'
 myFrame = cvFrame(0)
 
 # video stream device
-videoDev = 0
+videoDev = 1
 
 #web Socket Server
 socketURL = 'ws://localhost:9000/ws'
@@ -538,22 +555,16 @@ while True:
     
     if myKeyHandler.sendCommand is not None:
         sendCommand(command = myKeyHandler.sendCommand, websocket = ws)
+        usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
     
+    
+    #FIXME add exception for dealing with this
     # pause live display, destroy windows, display pause message
     if keyPress & 0xFF == ord ('p'):
         pause = True
         displayOff = True
         usrMessages.addMsg('pause.1', 'Live display paused')
         usrMessages.addMsg('pause.2', '\'u\': unpause; shift+\'q\' to quit')
-        
-    # quit and cleanup    
-    #if keyPress & 0xFF == ord ('A'):
-    #    print 'we out.'
-    #    # destroy all windows and release video
-    #    myFrame.release()
-    #    cv2.destroyAllWindows()
-    #    cv2.waitKey(1)    
-    #    break
     
     # unpause live display
     if keyPress & 0xFF == ord ('u'):
@@ -561,27 +572,7 @@ while True:
         displayOff = False
         usrMessages.delMsg('pause.1')
         usrMessages.delMsg('pause.2')
-        
-    ## play control ##
-    # restart game
-    #if keyPress & 0xFF == ord ('k'):
-    #    sendCommand(command = '3', websocket = ws)
-    #    usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Game')
-        
-    if keyPress & 0xFF == ord ('P'):
-        sendCommand(command = 4, websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Point')
-        
-    # calibration
-    if keyPress & 0xFF == ord ('C'):
-        sendCommand(command = '5', websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restart Calibration')
-
-    # return to credits screen
-    if keyPress & 0xFF == ord ('Z'):
-        sendCommand(command = '6', websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Returning to Credits')
-        
+                
     if keyPress & 0xFF == ord ('h'):
         usrMessages.addMsg('info.'+str(runningLoop+.1), 'R: restart game')
         usrMessages.addMsg('info.'+str(runningLoop+.2), 'P: restart point')
@@ -643,6 +634,7 @@ while True:
         ws.connect()
         usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
     
+    #FIXME move this into a sub?
     # update the pause screen and clean out old info messages
     if (runningLoop % updateRate == 0): 
         #clean out "info" messages after every update period has passed 
@@ -735,4 +727,9 @@ class myClass:
         
 myVar = myClass()
 print myVar.eye
+
+
+# In[ ]:
+
+print dir(runningLoop)
 
