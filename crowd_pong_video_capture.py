@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[4]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -430,9 +430,6 @@ def ratio(countA, countB):
     if countA < countB:
         #give a positve number
         percent=1*((countB-countA)/float(countB))
-    
-    if  .2 > percent > -.2:
-        percent = 0.0
     return(percent)
 
 def displayMessages(img, msgDict = {}):
@@ -457,7 +454,7 @@ def doNothing():
     pass
 
 
-# In[5]:
+# In[ ]:
 
 
 # init variables
