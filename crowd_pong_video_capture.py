@@ -16,7 +16,9 @@ class outputValue:
     '''class for recording the float output value from the video sampling'''
     def __init__(self):
         self.value = 0.0
-    
+        
+class loopHalt(Exception): pass
+        
 class colorHSV:
     '''Form a range of values for HSV colorspace filtering based on color:
     
@@ -100,6 +102,7 @@ class colorHSV:
     
     def setRangeDefault(self):
         '''use the predefined defaults to set hue range'''
+        # set the lower and upper ranges based on values from the default ranges
         self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
                                         self.satRange[0], self.valRange[0]] )
         self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
@@ -282,7 +285,108 @@ class msgHandler:
             del self.msgList[msgID]
         else:
             pass
-            
+
+class keyHandler:
+    '''handle key presses'''
+    helpDict = {
+        'C': 'Restart calibration',
+        'h': 'Print help text to screen',
+        'P': 'Restart point (do over)',
+        'p': 'Pause live display',
+        'Q': 'Quit',
+        'R': 'Restart game',
+        'u': 'Unpause live display',
+        'Z': 'Return to credit screen'        
+    }
+
+    
+    def __init__(self):
+        '''keyPress - OpenCV waitKey() value
+        keyPressDEC - Decimal equivalent of value
+        keyPressCHR - ASCII character value
+        functionCall - function to execute based on keypress
+        sendCommand - command to send to websocket server
+        functionMap - map keypresses to functions
+        displayMsg - text to display in live window
+        msgType - type of message: info, 
+        
+        '''
+        self.keyPress = None
+        self.keyPressDEC = 255
+        self.keyPressCHR = None
+        self.functionCall = doNothing()
+        self.sendCommand = None
+        self.displayMsg = ''
+        self.msgType = ''
+        self.functionMap = {
+            'C': self.calibration,
+            'h': self.printHelp,
+            'P': self.restartPoint,
+            'p': self.pauseDisplay,
+            'Q': self.quit,
+            'R': self.restartGame,
+            'u': self.unpauseDisplay,
+            'Z': self.credits,
+        }
+        
+    
+    def keyInput(self, keyPress):
+        
+        self.keyPress = keyPress
+        self.keyPressDEC = self.keyPress & 0xFF
+        self.keyPressCHR = chr(self.keyPressDEC)
+        
+       
+        if self.keyPressCHR in self.functionMap:
+            self.functionMap[self.keyPressCHR]()
+    
+        #elif self.keyPressDEC == 255:
+        # if the key is not in the function map reset
+        else:
+            # reset the send command to none 
+            self.sendCommand = None
+            # reset the display text to ''
+            self.displayMsg = ''
+            self.msgType = ''
+    
+    
+    def calibration(self):
+        self.sendCommand = '5'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        self.msgType = info
+        
+    def printHelp(self):
+        for key in self.helpDict:
+            print key, self.helpDict[key]
+    
+    def restartPoint(self):
+        self.sendCommand= '4'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        #self.displayMsg = 'Restart Point: Code ' + self.sendCommand
+        self.msgType = 'info'
+    
+    def quit(self):
+        self.functionCall = doNothing()
+        raise loopHalt
+        
+    def restartGame(self):
+        self.sendCommand = '3'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        #self.displayMsg = 'Restart Game: Code ' + self.sendCommand
+        self.msgType = 'info'
+        
+    def credits(self):
+        self.sendCommand = '6'
+        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
+        self.msgType = 'info'
+        
+    def pauseDisplay(self):
+        pass
+    
+    def unpauseDisplay(self):
+        pass
+    
+
 def adjust(x):
     '''Place holder function for opencv.getTrackBar function.
     Simply passes trackbar position to a variable'''
@@ -337,13 +441,17 @@ def displayMessages(img, msgDict = {}):
     
     return img
 
-def sendCommand(websocket, command = '0.001', num = 1):
+def sendCommand(websocket, command = 'null', num = 1):
     '''send a command num times to the websocket object'''
     if websocket.isConnected:
         for i in range(num):
             ws.send(str(command))
-    
+    # FIXME WTF is this for?  I don't think we return anything here.
     return
+    
+def doNothing():
+    '''placeholder function that does nothing'''
+    pass
 
 
 # In[ ]:
@@ -365,7 +473,7 @@ liveDisplayName = 'Live'
 myFrame = cvFrame(0)
 
 # video stream device
-videoDev = 0
+videoDev = 1
 
 #web Socket Server
 socketURL = 'ws://localhost:9000/ws'
@@ -420,27 +528,43 @@ cv2.moveWindow(channelDisplayName, 0, 300)
 cv2.moveWindow(liveDisplayName, 0, 350)
     
 
+    
+##### TESTING
+myKeyHandler = keyHandler()
+keyPress = None
+    
 # begin looping until user quits
 while True:     
    
     ####FIXME - time to make this a class/sub?
     # capture key presses & act on them
     keyPress = cv2.waitKey(1)
+    
+    # capture keypresses and handel them
+    # halt on loopHalt exception
+    try:
+        myKeyHandler.keyInput(keyPress)
+        #execute the functioncall that has been set based on keyPress
+        myKeyHandler.functionCall
+    except loopHalt:
+        # clean up on exception
+        myFrame.release()
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        break
+    
+    if myKeyHandler.sendCommand is not None:
+        sendCommand(command = myKeyHandler.sendCommand, websocket = ws)
+        usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
+    
+    
+    #FIXME add exception for dealing with this
     # pause live display, destroy windows, display pause message
     if keyPress & 0xFF == ord ('p'):
         pause = True
         displayOff = True
         usrMessages.addMsg('pause.1', 'Live display paused')
         usrMessages.addMsg('pause.2', '\'u\': unpause; shift+\'q\' to quit')
-        
-    # quit and cleanup    
-    if keyPress & 0xFF == ord ('Q'):
-        print 'we out.'
-        # destroy all windows and release video
-        myFrame.release()
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)    
-        break
     
     # unpause live display
     if keyPress & 0xFF == ord ('u'):
@@ -448,27 +572,7 @@ while True:
         displayOff = False
         usrMessages.delMsg('pause.1')
         usrMessages.delMsg('pause.2')
-        
-    ## play control ##
-    # restart game
-    if keyPress & 0xFF == ord ('R'):
-        sendCommand(command = '3', websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Game')
-        
-    if keyPress & 0xFF == ord ('P'):
-        sendCommand(command = 4, websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restarting Point')
-        
-    # calibration
-    if keyPress & 0xFF == ord ('C'):
-        sendCommand(command = '5', websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Restart Calibration')
-
-    # return to credits screen
-    if keyPress & 0xFF == ord ('Z'):
-        sendCommand(command = '6', websocket = ws)
-        usrMessages.addMsg('info.'+str(runningLoop), 'Returning to Credits')
-        
+                
     if keyPress & 0xFF == ord ('h'):
         usrMessages.addMsg('info.'+str(runningLoop+.1), 'R: restart game')
         usrMessages.addMsg('info.'+str(runningLoop+.2), 'P: restart point')
@@ -530,6 +634,7 @@ while True:
         ws.connect()
         usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
     
+    #FIXME move this into a sub?
     # update the pause screen and clean out old info messages
     if (runningLoop % updateRate == 0): 
         #clean out "info" messages after every update period has passed 
@@ -613,5 +718,18 @@ cv2.waitKey(1)
 
 # In[ ]:
 
+class myClass:
+    i = 3
+    def __init__(self):
+        self.eye = self.i
+    def g(self):
+        print self.i
+        
+myVar = myClass()
+print myVar.eye
 
+
+# In[ ]:
+
+print dir(runningLoop)
 
