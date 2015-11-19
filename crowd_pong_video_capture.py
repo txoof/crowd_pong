@@ -9,14 +9,36 @@ import re
 import copy
 from websocket import create_connection
 import websocket
+import time
 
 
 #Classes
 class outputValue:
-    '''class for recording the float output value from the video sampling'''
+    '''Recording the float output value from the video sampling'''
     def __init__(self):
         self.value = 0.0
-        
+
+class elapsedTime:
+    '''Measure elapsed time (time delta)
+    timeLast - record a time for later comparison'''
+    def __init__(self):
+        self.timeLast = time.time()
+    
+    def timeNow(self):
+        '''return the time NOW'''
+        return time.time()
+    
+    def setTime(self):
+        '''record the current time'''
+        self.timeLast = time.time()
+    
+    def hasElapsed(self, elapsed = -1):
+        '''return True if the timeNow  - timeLast > elapsed (in seconds)'''
+        if self.timeNow() - self.timeLast > elapsed:
+            return True
+        else:
+            return False
+
 class loopHalt(Exception): 
     '''class for handling a loopHalt event (quit)'''
     pass
@@ -246,20 +268,42 @@ class webSocket:
     '''create a web socket connection
     url - complete url in the form of ws://host:<port>/path
     socket - websocket object
-    isConnected - boolean'''
+    isConnected - boolean
+    connectedAt - time the connection was made
+    attemptedAt - time a connection attempt was made'''
     def __init__(self, url):
         self.url = url
         self.isConnected = False
-        self.socket = self.connect
-        
+        self.socket = None
+        self.connectionTime = elapsedTime()
+        #self.socket = self.connect
+        # still working out how to use the elapsed time class
+    
+    ####FIXME! totally busted
     def connect(self):
+        '''connect to the web socket'''
+        # set the time that the connection was attempted
+        self.connectionTime.setTime()
+        
+        # attempt to connect
         try:
-            self.socket = websocket.create_connection(self.url)
+            self.socket = websocket.create_connection(self.url) 
             if self.socket.connected:
                 self.isConnected = True
         except Exception, e:
             self.isConnected = False
-            
+    
+    def reconnect(self, rate = 3):
+        '''attempt to reconnect no more than every <rate> seconds'''
+        if self.isConnected:
+            pass
+        else:
+            # check to see if enough time has elapsed before attempting a connection
+            if self.connectionTime.hasElapsed(rate):
+                self.connect()
+            else:
+                pass
+    
     def send(self, msg):
         try:
             self.socket.send(msg)
@@ -267,6 +311,7 @@ class webSocket:
             print 'error sending to socket:', e
             print 'is the web socket server running?'
             self.isConnected = False
+            
 
 class msgHandler:
     '''important messages to display on the live window'''
@@ -485,6 +530,7 @@ colorA = colorHSV('UP - Green')
 colorB = colorHSV('DOWN - Violet')
 channels = [colorA, colorB]
 
+
 # display name for output window
 channelDisplayName = colorA.name + ' : ' + colorB.name
 liveDisplayName = 'Live'
@@ -517,9 +563,14 @@ usrMessages = msgHandler()
 
 # create a connection to the web socket handler object
 ws = webSocket(socketURL)
+ws.connect()
 
+#### FIXME - this is a kludge
+# use the elapsed time class for this
 # Count the loops for updating the paused display and handling messages
 runningLoop = 0
+
+
 # frequency to update and clean displayed user messages
 updateRate = 150
 
@@ -646,9 +697,10 @@ while True:
     if ws.isConnected:
         ws.send(str(output.value))
         usrMessages.delMsg('error.socket')
-    else:
-        ws.connect()
-        usrMessages.addMsg('error.socket', 'socket not connected; attemting reconnect')
+    else:    
+        # attempt a reconnection every N seconds (default is 3)
+        ws.reconnect(3)
+        usrMessages.addMsg('error.socket', 'socket not connected; attempting reconnect')
     
     #FIXME move this into a sub?
     # update the pause screen and clean out old info messages
@@ -663,7 +715,8 @@ while True:
             pause = True
             # reset the running loop 
             runningLoop = 0
-            
+
+    ####FIXME - use time rather than this kludge
     if runningLoop >= 100001:
         # reset to prevent an overflow
         runningLoop = 0
@@ -726,38 +779,4 @@ while True:
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[ ]:
-
-class myClass:
-    i = 3
-    def __init__(self):
-        self.eye = self.i
-    def g(self):
-        print self.i
-        
-myVar = myClass()
-print myVar.eye
-
-
-# In[ ]:
-
-def drange(start, stop, step):
-    r = start
-    while r < stop:
-        yield r
-        r += step
-        
-for i in drange(-1, 1, 0.01):
-    foo = i
-    if -.2 < i < .2:
-        foo = 0 
-        
-    print foo
-
-
-# In[ ]:
-
-
 
