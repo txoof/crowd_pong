@@ -20,8 +20,10 @@ class outputValue:
 
 class elapsedTime:
     '''Measure elapsed time (time delta)
-    timeLast - record a time for later comparison'''
+    timeLast - record a time for later comparison
+    startTime - time variable was last inited'''
     def __init__(self):
+        self.startTime = time.time()
         self.timeLast = time.time()
     
     def timeNow(self):
@@ -492,8 +494,6 @@ def ratio(countA, countB):
     # set percent to 0.0 when the colors are in the range -.2 to .2
     if -.2 < percent < .2:
         percent = 0.0
-    
-    
     return(percent)
 
 def displayMessages(img, msgDict = {}):
@@ -558,6 +558,9 @@ output = outputValue
 pause = False
 displayOff = False
 
+
+##### Non User Defined Objects ####
+
 # init the list of important display messages
 usrMessages = msgHandler()
 
@@ -565,17 +568,16 @@ usrMessages = msgHandler()
 ws = webSocket(socketURL)
 ws.connect()
 
-#### FIXME - this is a kludge
-# use the elapsed time class for this
-# Count the loops for updating the paused display and handling messages
-runningLoop = 0
+# keep track of running time as an elapsedTime object
+runTime = elapsedTime()
+# keep track of time that a message is displayed
+msgTime = elapsedTime()
 
+# define the keyhandler object
+myKeyHandler = keyHandler()
 
-# frequency to update and clean displayed user messages
-updateRate = 150
 
 ### Initialize Systems ###
-
 # init trackbars for each channel
 
 # loop counter for placing windows
@@ -598,8 +600,6 @@ cv2.moveWindow(channelDisplayName, 0, 300)
 cv2.moveWindow(liveDisplayName, 0, 350) 
 
     
-# define the keyhandler object
-myKeyHandler = keyHandler()
     
 # begin looping until user quits
 while True:     
@@ -620,8 +620,10 @@ while True:
     
     # send commands to the web socket if they are defined
     if myKeyHandler.sendCommand is not None:
+        # record the time that a keypress came in
+        msgTime.setTime()
         sendCommand(command = myKeyHandler.sendCommand, websocket = ws)
-        usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
+        usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()), myKeyHandler.displayMsg)
         # handle special cases (pause, unpause, help)
         
         ##### FIXME - this is not very pythonic. How can I do this without the messy
@@ -631,7 +633,7 @@ while True:
         if myKeyHandler.sendCommand == -2:
             pause = True
             displayOff = True
-            usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
+            usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()), myKeyHandler.displayMsg)
 
         # unpause
         if myKeyHandler.sendCommand == -3:
@@ -643,10 +645,10 @@ while True:
         if myKeyHandler.sendCommand == -4:
             #FIXME - hackish way of dealing with the fact that 
             # messages are one-liners and each message needs a unique id 
-            # based on the runningLoop serial number
+            # based on the epochtime in seconds serial number
             idCounter = 0.0
             for key in myKeyHandler.helpDict:
-                usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop+idCounter), 
+                usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()+idCounter), 
                                   key + ': ' + myKeyHandler.helpDict[key])
                 # increment idCounter
                 idCounter += .1 
@@ -702,26 +704,20 @@ while True:
         ws.reconnect(3)
         usrMessages.addMsg('error.socket', 'socket not connected; attempting reconnect')
     
-    #FIXME move this into a sub?
-    # update the pause screen and clean out old info messages
-    if (runningLoop % updateRate == 0): 
+   
+    # allow messages to be displayed for (N) seconds (refreshed every time a new key is pressed)
+    if msgTime.hasElapsed(5):
         
         #clean out "info" messages after every update period has passed 
         usrMessages.delAllMsg('info')
  
-        #update the pause screen
-        if displayOff:
-            # set pause to True to force an update of the pauseframe 
-            pause = True
-            # reset the running loop 
-            runningLoop = 0
-
-    ####FIXME - use time rather than this kludge
-    if runningLoop >= 100001:
-        # reset to prevent an overflow
-        runningLoop = 0
-    
-       
+    #update the pause screen every 5 seconds
+    if displayOff and runTime.hasElapsed(5):
+        runTime.setTime()
+        # set pause to True to force an update of the pauseframe 
+        ####FIXME this is a kludge. Find a better way to handle pausing?
+        pause = True        
+        
     # pause live updating and destroy some windows to save memory
     if pause and displayOff: 
         pauseFrame = myFrame.frame
@@ -766,10 +762,6 @@ while True:
         usrMessages.msgList['output value'] = 'ratio: ' + str(output.value)
         displayMessages(myFrame.frame, usrMessages.msgList)
         cv2.imshow(liveDisplayName, myFrame.frame)
-    
-    #increment the loop counter (used to update user information)
-    runningLoop += 1
-
 
 
 
