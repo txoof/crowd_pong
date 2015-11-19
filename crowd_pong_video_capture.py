@@ -436,13 +436,19 @@ def ratio(countA, countB):
     colorA is defined as the negative color and colorB is defined as the positive color
     method: (X-Y)/X where X is the larger number'''
     if countA==countB:
-        return(0)
+        return(0.0)
     if countA > countB:
         # give a negative number
         percent=-1*((countA-countB)/float(countA))
     if countA < countB:
         #give a positve number
         percent=1*((countB-countA)/float(countB))
+    
+    # set percent to 0.0 when the colors are in the range -.2 to .2
+    if -.2 < percent < .2:
+        percent = 0.0
+    
+    
     return(percent)
 
 def displayMessages(img, msgDict = {}):
@@ -737,7 +743,18 @@ print myVar.eye
 
 # In[ ]:
 
-print usrMessages.msgList
+def drange(start, stop, step):
+    r = start
+    while r < stop:
+        yield r
+        r += step
+        
+for i in drange(-1, 1, 0.01):
+    foo = i
+    if -.2 < i < .2:
+        foo = 0 
+        
+    print foo
 
 
 # In[ ]:
