@@ -17,7 +17,9 @@ class outputValue:
     def __init__(self):
         self.value = 0.0
         
-class loopHalt(Exception): pass
+class loopHalt(Exception): 
+    '''class for handling a loopHalt event (quit)'''
+    pass
         
 class colorHSV:
     '''Form a range of values for HSV colorspace filtering based on color:
@@ -285,6 +287,15 @@ class msgHandler:
             del self.msgList[msgID]
         else:
             pass
+        
+    def delAllMsg(self, msgType):
+        for key in self.msgList.keys():
+            regexp = msgType+'.*'
+            match = re.search(regexp, key)
+            if match is not None:
+                self.delMsg(key)     
+    
+    
 
 class keyHandler:
     '''handle key presses'''
@@ -350,42 +361,44 @@ class keyHandler:
             self.msgType = ''
     
     
-    def calibration(self):
-        self.sendCommand = '5'
-        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
-        self.msgType = info
-        
+
     def printHelp(self):
-        for key in self.helpDict:
-            print key, self.helpDict[key]
-    
-    def restartPoint(self):
-        self.sendCommand= '4'
-        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
-        #self.displayMsg = 'Restart Point: Code ' + self.sendCommand
-        self.msgType = 'info'
+        #for key in self.helpDict:
+        #    print key, self.helpDict[key]
+        self.returnCmd(-4, 'info')
     
     def quit(self):
         self.functionCall = doNothing()
         raise loopHalt
         
     def restartGame(self):
-        self.sendCommand = '3'
-        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
-        #self.displayMsg = 'Restart Game: Code ' + self.sendCommand
-        self.msgType = 'info'
+        self.returnCmd(3, 'info')
+
+    def restartPoint(self):
+        self.returnCmd(4, 'info')
+   
+    def calibration(self):
+        self.returnCmd(5, 'info')
         
     def credits(self):
-        self.sendCommand = '6'
-        self.displayMsg = self.helpDict[self.keyPressCHR] + ': Code ' + self.sendCommand
-        self.msgType = 'info'
+        self.returnCmd(6, 'info')
         
     def pauseDisplay(self):
-        pass
+        self.returnCmd(-2, 'state')
     
     def unpauseDisplay(self):
-        pass
+        self.returnCmd(-3, 'state')
     
+    def returnCmd(self, command, msgType = 'None'):
+        self.sendCommand = command
+        if self.keyPressCHR in self.helpDict:
+            helpDict = self.helpDict[self.keyPressCHR]
+        else:
+            helpDict = 'Undocumented feature'
+        self.displayMsg = helpDict + ': Code ' + str(self.sendCommand)
+        self.msgType = msgType
+    
+     
 
 def adjust(x):
     '''Place holder function for opencv.getTrackBar function.
@@ -499,10 +512,10 @@ usrMessages = msgHandler()
 # create a connection to the web socket handler object
 ws = webSocket(socketURL)
 
-# Count the loops for updating the paused display
+# Count the loops for updating the paused display and handling messages
 runningLoop = 0
 # frequency to update and clean displayed user messages
-updateRate = 100
+updateRate = 150
 
 ### Initialize Systems ###
 
@@ -525,65 +538,61 @@ for color in channels:
 cv2.namedWindow(channelDisplayName)
 cv2.namedWindow(liveDisplayName)
 cv2.moveWindow(channelDisplayName, 0, 300)
-cv2.moveWindow(liveDisplayName, 0, 350)
-    
+cv2.moveWindow(liveDisplayName, 0, 350) 
 
     
-##### TESTING
+# define the keyhandler object
 myKeyHandler = keyHandler()
-keyPress = None
     
 # begin looping until user quits
 while True:     
    
-    ####FIXME - time to make this a class/sub?
-    # capture key presses & act on them
-    keyPress = cv2.waitKey(1)
-    
-    # capture keypresses and handel them
+    # capture keypresses and handle them
     # halt on loopHalt exception
     try:
-        myKeyHandler.keyInput(keyPress)
+        #myKeyHandler.keyInput(keyPress)
+        myKeyHandler.keyInput(cv2.waitKey(1))
         #execute the functioncall that has been set based on keyPress
         myKeyHandler.functionCall
     except loopHalt:
-        # clean up on exception
+        # clean up on halt exception
         myFrame.release()
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         break
     
+    # send commands to the web socket if they are defined
     if myKeyHandler.sendCommand is not None:
         sendCommand(command = myKeyHandler.sendCommand, websocket = ws)
         usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
-    
-    
-    #FIXME add exception for dealing with this
-    # pause live display, destroy windows, display pause message
-    if keyPress & 0xFF == ord ('p'):
-        pause = True
-        displayOff = True
-        usrMessages.addMsg('pause.1', 'Live display paused')
-        usrMessages.addMsg('pause.2', '\'u\': unpause; shift+\'q\' to quit')
-    
-    # unpause live display
-    if keyPress & 0xFF == ord ('u'):
-        pause = False
-        displayOff = False
-        usrMessages.delMsg('pause.1')
-        usrMessages.delMsg('pause.2')
-                
-    if keyPress & 0xFF == ord ('h'):
-        usrMessages.addMsg('info.'+str(runningLoop+.1), 'R: restart game')
-        usrMessages.addMsg('info.'+str(runningLoop+.2), 'P: restart point')
-        usrMessages.addMsg('info.'+str(runningLoop+.3), 'C: restart calibration')
-        usrMessages.addMsg('info.'+str(runningLoop+.4), 'Z: return to credits')
-        usrMessages.addMsg('info.'+str(runningLoop+.5), 'Q: quit')
-        usrMessages.addMsg('info.'+str(runningLoop+.6), 'Z: return to credits')
-        usrMessages.addMsg('info.'+str(runningLoop+.7), 'p: pause live display')
-    
-    #reset the keypress variable
-    keyPress=False    
+        # handle special cases (pause, unpause, help)
+        
+        ##### FIXME - this is not very pythonic. How can I do this without the messy
+        # if statements? pause and unpause need to set special local variables
+        # This is awful, you need to know what each code is! Not readable. :(
+        # pause
+        if myKeyHandler.sendCommand == -2:
+            pause = True
+            displayOff = True
+            usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop), myKeyHandler.displayMsg)
+
+        # unpause
+        if myKeyHandler.sendCommand == -3:
+            pause = False
+            displayOff = False
+            usrMessages.delAllMsg(myKeyHandler.msgType)
+            
+        # help
+        if myKeyHandler.sendCommand == -4:
+            #FIXME - hackish way of dealing with the fact that 
+            # messages are one-liners and each message needs a unique id 
+            # based on the runningLoop serial number
+            idCounter = 0.0
+            for key in myKeyHandler.helpDict:
+                usrMessages.addMsg(myKeyHandler.msgType+str(runningLoop+idCounter), 
+                                  key + ': ' + myKeyHandler.helpDict[key])
+                # increment idCounter
+                idCounter += .1 
 
     # check for changes in trackbar
     # update control panels and color swatches
@@ -626,24 +635,22 @@ while True:
     # calculate the ratio of colors in terms of a value between -1 and 1
     output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
     
+    ####FIXME - the ws.connect should try every N cycles, not every cycle
     # check for websocket connection and send the video output value
     if ws.isConnected:
         ws.send(str(output.value))
-        usrMessages.delMsg('socket.err')
+        usrMessages.delMsg('error.socket')
     else:
         ws.connect()
-        usrMessages.addMsg('socket.err', 'socket not connected; attemting reconnect')
+        usrMessages.addMsg('error.socket', 'socket not connected; attemting reconnect')
     
     #FIXME move this into a sub?
     # update the pause screen and clean out old info messages
     if (runningLoop % updateRate == 0): 
-        #clean out "info" messages after every update period has passed 
-        for k in usrMessages.msgList.keys():
-            regexp = 'info.*'
-            m = re.search(regexp, k)
-            if m is not None:
-                usrMessages.delMsg(k)        
         
+        #clean out "info" messages after every update period has passed 
+        usrMessages.delAllMsg('info')
+ 
         #update the pause screen
         if displayOff:
             # set pause to True to force an update of the pauseframe 
@@ -651,14 +658,13 @@ while True:
             # reset the running loop 
             runningLoop = 0
             
-    if runningLoop >= 1001:
+    if runningLoop >= 100001:
         # reset to prevent an overflow
         runningLoop = 0
     
        
     # pause live updating and destroy some windows to save memory
-    if pause and displayOff:
-        
+    if pause and displayOff: 
         pauseFrame = myFrame.frame
         # destroy unneeded windows
         cv2.destroyWindow(channelDisplayName)
@@ -731,5 +737,10 @@ print myVar.eye
 
 # In[ ]:
 
-print dir(runningLoop)
+print usrMessages.msgList
+
+
+# In[ ]:
+
+
 
