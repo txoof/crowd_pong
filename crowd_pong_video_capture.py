@@ -16,7 +16,7 @@ import time
 
 # # Classes
 
-# In[37]:
+# In[56]:
 
 ## Classes
 class outputValue:
@@ -391,101 +391,98 @@ class keyHandler:
         'u': 'Unpause live display',
         'Z': 'Return to credit screen'        
     }
+    
+    def __init__(self):
+        '''keyPress - OpenCV waitKey() value
+        keyPressDEC - Decimal equivalent of value
+        keyPressCHR - ASCII character value
+        functionCall - function to execute based on keypress
+        sendCommand - command to send to websocket server
+        functionMap - map keypresses to functions
+        displayMsg - text to display in live window
+        msgType - type of message: info, 
+        
+        '''
+        self.keyPress = None
+        self.keyPressDEC = 255
+        self.keyPressCHR = None
+        self.functionCall = doNothing()
+        self.sendCommand = None
+        self.displayMsg = ''
+        self.msgType = ''
+        self.functionMap = {
+            'C': self.calibration,
+            'h': self.printHelp,
+            'P': self.restartPoint,
+            'p': self.pauseDisplay,
+            'Q': self.quit,
+            'R': self.restartGame,
+            'u': self.unpauseDisplay,
+            'Z': self.credits,
+        }
+        
+    
+    def keyInput(self, keyPress):       
+        self.keyPress = keyPress
+        self.keyPressDEC = self.keyPress & 0xFF
+        self.keyPressCHR = chr(self.keyPressDEC)
+       
+        if self.keyPressCHR in self.functionMap:
+            self.functionMap[self.keyPressCHR]()
+    
+        #elif self.keyPressDEC == 255:
+        # if the key is not in the function map reset
+        else:
+            # reset the send command to none 
+            self.sendCommand = None
+            # reset the display text to ''
+            self.displayMsg = ''
+            self.msgType = ''
+    
+    
 
+    def printHelp(self):
+        #for key in self.helpDict:
+        #    print key, self.helpDict[key]
+        self.returnCmd(-4, 'info')
+    
+    def quit(self):
+        self.functionCall = doNothing()
+        raise loopHalt
+        
+    def restartGame(self):
+        self.returnCmd(3, 'info')
+
+    def restartPoint(self):
+        self.returnCmd(4, 'info')
+   
+    def calibration(self):
+        self.returnCmd(5, 'info')
+        
+    def credits(self):
+        self.returnCmd(6, 'info')
+        
+    def pauseDisplay(self):
+        self.returnCmd(-2, 'state')
+    
+    def unpauseDisplay(self):
+        self.returnCmd(-3, 'state')
+    
+    def returnCmd(self, command, msgType = 'None'):
+        self.sendCommand = command
+        if self.keyPressCHR in self.helpDict:
+            helpDict = self.helpDict[self.keyPressCHR]
+        else:
+            helpDict = 'Undocumented feature'
+        self.displayMsg = helpDict + ': Code ' + str(self.sendCommand)
+        self.msgType = msgType
  
 
 
 # # sub routines
 
-# In[38]:
+# In[57]:
 
-
- def __init__(self):
-     '''keyPress - OpenCV waitKey() value
-     keyPressDEC - Decimal equivalent of value
-     keyPressCHR - ASCII character value
-     functionCall - function to execute based on keypress
-     sendCommand - command to send to websocket server
-     functionMap - map keypresses to functions
-     displayMsg - text to display in live window
-     msgType - type of message: info, 
-     
-     '''
-     self.keyPress = None
-     self.keyPressDEC = 255
-     self.keyPressCHR = None
-     self.functionCall = doNothing()
-     self.sendCommand = None
-     self.displayMsg = ''
-     self.msgType = ''
-     self.functionMap = {
-         'C': self.calibration,
-         'h': self.printHelp,
-         'P': self.restartPoint,
-         'p': self.pauseDisplay,
-         'Q': self.quit,
-         'R': self.restartGame,
-         'u': self.unpauseDisplay,
-         'Z': self.credits,
-     }
-     
- 
- def keyInput(self, keyPress):       
-     self.keyPress = keyPress
-     self.keyPressDEC = self.keyPress & 0xFF
-     self.keyPressCHR = chr(self.keyPressDEC)
-    
-     if self.keyPressCHR in self.functionMap:
-         self.functionMap[self.keyPressCHR]()
- 
-     #elif self.keyPressDEC == 255:
-     # if the key is not in the function map reset
-     else:
-         # reset the send command to none 
-         self.sendCommand = None
-         # reset the display text to ''
-         self.displayMsg = ''
-         self.msgType = ''
- 
- 
-
- def printHelp(self):
-     #for key in self.helpDict:
-     #    print key, self.helpDict[key]
-     self.returnCmd(-4, 'info')
- 
- def quit(self):
-     self.functionCall = doNothing()
-     raise loopHalt
-     
- def restartGame(self):
-     self.returnCmd(3, 'info')
-
- def restartPoint(self):
-     self.returnCmd(4, 'info')
-
- def calibration(self):
-     self.returnCmd(5, 'info')
-     
- def credits(self):
-     self.returnCmd(6, 'info')
-     
- def pauseDisplay(self):
-     self.returnCmd(-2, 'state')
- 
- def unpauseDisplay(self):
-     self.returnCmd(-3, 'state')
- 
- def returnCmd(self, command, msgType = 'None'):
-     self.sendCommand = command
-     if self.keyPressCHR in self.helpDict:
-         helpDict = self.helpDict[self.keyPressCHR]
-     else:
-         helpDict = 'Undocumented feature'
-     self.displayMsg = helpDict + ': Code ' + str(self.sendCommand)
-     self.msgType = msgType
- 
-  
 
 def adjust(x):
  '''Place holder function for opencv.getTrackBar function.
@@ -560,7 +557,7 @@ def doNothing():
 
 # # New classes
 
-# In[45]:
+# In[63]:
 
 class runTimeState:
     ### Consider merging in the runTime variable as runningTime
@@ -612,20 +609,23 @@ class runTimeState:
             self.displayMsg = ''
             self.msgType = ''
             
-    def calibration(self):
-        pass
+   
     
     def printHelp(self):
-        pass
-    
-    def restartPoint(self):
+        ####FIXME - add the help by magic?
         pass
     
     def restartGame(self):
-        pass
+        self.sendCmd(3, 'info')
+
+    def restartPoint(self):
+        self.sendCmd(4, 'info')
+    
+    def calibration(self):
+        self.sendCmd(5, 'info')
     
     def credits(self):
-        pass
+        self.sendCmd(6, 'info')
     
     def pauseDisplay(self):
         self.pause = True
@@ -645,39 +645,9 @@ class runTimeState:
         self.msgType = msgType
         if self.keyHandler.keyPressCHR in self.helpDict:
             helpLookup = self.helpDict[self.keyHandler.keyPressCHR]
-            print self.keyHandler.keyPressCHR, helpLookup
         else:
             helpLookup = 'Undocumented feature'
         self.displayMsg = helpLookup + ': Code ' + str(self.command)
-        
-    '''
-    def restartGame(self):
-        self.returnCmd(3, 'info')
-
-    def restartPoint(self):
-        self.returnCmd(4, 'info')
-   
-    def calibration(self):
-        self.returnCmd(5, 'info')
-        
-    def credits(self):
-        self.returnCmd(6, 'info')
-        
-    def pauseDisplay(self):
-        self.returnCmd(-2, 'state')
-    
-    def unpauseDisplay(self):
-        self.returnCmd(-3, 'state')
-    
-    def returnCmd(self, command, msgType = 'None'):
-        self.sendCommand = command
-        if self.keyPressCHR in self.helpDict:
-            helpDict = self.helpDict[self.keyPressCHR]
-        else:
-            helpDict = 'Undocumented feature'
-        self.displayMsg = helpDict + ': Code ' + str(self.sendCommand)
-        self.msgType = msgType
-    '''
     
     def quit(self):
         self.functionCall = doNothing()
@@ -685,12 +655,13 @@ class runTimeState:
         
 
 
-# In[53]:
+# In[64]:
 
 ### Vars that should probably live in a configuration file
 socketURL = 'ws://localhost:9000/ws'
 color0Name = 'UP'
 color1Name = 'DOWN'
+videoDevice = 0 
 
 ### Init Objects
 # create a connection to the web socket handler object
@@ -703,7 +674,11 @@ channels = [colorHSV(color0Name), colorHSV(color1Name)]
 # keep track of runtime state and manage key presses
 myRunState = runTimeState()
 
+# object for holding user messages
 usrMessages = msgHandler()
+
+# openCV camera object
+myFrame = cvFrame(videoDevice)
 
 
 ##### TESTING #
@@ -738,11 +713,11 @@ while True:
 
     # send messages to websocket and display
     if myRunState.command is not None:
-        # record the time that a keypress came in
+        # send a command to the web socket
         sendCommand(command = myRunState.command, websocket = ws)
-        # delete old messages of the same type
+        # delete old messages of the same type just created
         usrMessages.delAllMsg(myRunState.msgType)
-        # add new messages with a creation time
+        # add new messages
         usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)        
         
     # read and convert frame
@@ -752,6 +727,12 @@ while True:
     # check web socket and write out data
     # update displays with current frame and messages
     # delete old messages of type info, state
+    
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)
+# FIXME disconnect gracefully from the websocket 
+ws.disconnect()
 
 
 # In[54]:
@@ -759,9 +740,9 @@ while True:
 usrMessages.msgList
 
 
-# In[51]:
+# In[65]:
 
-#myFrame.release()
+myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
 # FIXME disconnect gracefully from the websocket 
