@@ -555,7 +555,8 @@ def doNothing():
  pass
 
 
-# # New classes
+# # New classes 
+# Classes in training
 
 # In[63]:
 
@@ -655,13 +656,16 @@ class runTimeState:
         
 
 
-# In[64]:
+# In[67]:
 
 ### Vars that should probably live in a configuration file
+
+####FIXME this can probably all be moved into a ConfigParser object
 socketURL = 'ws://localhost:9000/ws'
 color0Name = 'UP'
 color1Name = 'DOWN'
 videoDevice = 0 
+
 
 ### Init Objects
 # create a connection to the web socket handler object
@@ -678,6 +682,7 @@ myRunState = runTimeState()
 usrMessages = msgHandler()
 
 # openCV camera object
+####FIXME cvFrame should try <videoDevice> then fall back to 0 if it is not found
 myFrame = cvFrame(videoDevice)
 
 
@@ -690,6 +695,7 @@ cv2.imshow('test', img)
 
 # initialize track bar windows
 # loop counter for placing windows
+####FIXME move this into a sub somehow?
 windowCount = 0
 for color in channels:
     color.createTrackBars()
@@ -721,7 +727,40 @@ while True:
         usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)        
         
     # read and convert frame
+    #myFrame.readFrame()
+    #### FIXME this can be done automagically in the class so it is always available
+    #myFrame.cvtHSV()
+    
+    
+    
     # sync trackbars 
+    # loop over each channel
+    ### FIXME this can be done in the class 
+    for color in channels:
+        changes = False
+        #make a copy of the color object for checking later 
+        oldColor = color.copy()
+        # check with the openCV HighGUI for changes on the trackbars
+        color.syncTrackBars()
+
+        # if the color range slider has moved update the hue range and the sliders
+        if oldColor.colorRange != color.colorRange:
+            color.setRangeDefault()
+            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
+            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
+            changes=True
+
+        # if the hue sliders have moved, update color swatch
+        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
+            changes=True
+
+        # update the windows if only if things have changed
+        if changes:
+            # update the color swatch attached to each control window
+            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                        colorRange=color.defaultRanges[color.colorRange][2])
+    
+    
     # create mask
     # calculate ratio
     # check web socket and write out data
@@ -735,7 +774,7 @@ cv2.waitKey(1)
 ws.disconnect()
 
 
-# In[54]:
+# In[66]:
 
 usrMessages.msgList
 
