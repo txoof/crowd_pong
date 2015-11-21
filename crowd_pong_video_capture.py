@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[2]:
+# In[1]:
 
 import cv2
 import numpy as np
@@ -16,7 +16,7 @@ import time
 
 # # Classes
 
-# In[3]:
+# In[2]:
 
 ## Classes
 class outputValue:
@@ -53,7 +53,7 @@ class elapsedTime:
 class loopHalt(Exception): 
     '''class for handling a loopHalt event (quit)'''
     pass
-"""        
+
 class colorHSV:
     '''Form a range of values for HSV colorspace filtering based on color:
     
@@ -106,8 +106,7 @@ class colorHSV:
 
         # set the name for a control slider window
         self.controlWinName = self.name + '_controls'
-        
-        
+         
         # integer loop counter
         iC=0
         
@@ -134,6 +133,7 @@ class colorHSV:
             
         # set to default color range
         self.setRangeDefault()
+        #self.copy = self.deepCopy()
     
     def setRangeDefault(self):
         '''use the predefined defaults to set hue range'''
@@ -177,7 +177,9 @@ class colorHSV:
         
     def syncTrackBars(self):
         '''record the position of openCV trackbars in lower and upper'''
-
+        
+        # make a copy for comparison later
+        oldHSV = copy.deepcopy(self)
         #hue
         self.lower[0] = cv2.getTrackbarPos(self.sliderHue[0], self.controlWinName)
 
@@ -195,6 +197,24 @@ class colorHSV:
         #color range
         self.colorRange = cv2.getTrackbarPos(self.sliderColRange[0], self.controlWinName)
 
+        # if the color range setting has changed, update the sliders
+        if self.colorRange != oldHSV.colorRange:
+            # use the new color range setting to update the hue values
+            self.setRangeDefault()
+            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
+            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])            
+                
+        # look for changes in the Hue sliders and update the color pallet as needed
+        if (self.lower[0] != oldHSV.lower[0]) or (self.upper[0] != oldHSV.upper[0]):
+            # update the color swatches on the control panels 
+            self.update()        
+
+    def update(self):
+        '''update windows and trackbars as needed'''
+        # update the control windows with a new color swatch
+        updateControlWindow(color.controlWinName, color.midBGRcolor(), 
+                    colorRange=color.defaultRanges[color.colorRange][2])
+         
     def midBGRcolor(self):
         '''return the middle value between the upper and lower hue values in BGR space'''
         colorDelta=(self.upper[0] - self.lower[0])
@@ -205,18 +225,7 @@ class colorHSV:
             midHSVcolor = np.uint8([[[self.lower[0] + (colorDelta)//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
-
-        
-    def copy(self):
-        '''make a duplicate object'''
-        return copy.deepcopy(self)
-    
-    # Ask martin about this again
-    def hasChanged(self):
-        '''compare self to a copy and if it has changed'''
-        pass
 """
-
 class cvFrame:
     
     def __init__(self, videoDev = 0, frameWidth = 500):
@@ -275,7 +284,7 @@ class cvFrame:
     def calcRes(self):
         self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
         return self.result
-
+"""
         
 class webSocket:
     #### Fixme - add a disconnect method
@@ -320,7 +329,7 @@ class webSocket:
     
     def disconnect(self):
         '''not yet implemented'''
-        print 'this does NOTHING'
+        print 'disconnect does NOTHING'
         pass
     
     def send(self, msg):
@@ -330,7 +339,6 @@ class webSocket:
             print 'error sending to socket:', e
             print 'is the web socket server running?'
             self.isConnected = False
-            
 
 class msgHandler:
     '''important messages to display on the live window'''
@@ -578,7 +586,7 @@ class runTimeState:
 
 # # sub routines
 
-# In[4]:
+# In[3]:
 
 
 def adjust(x):
@@ -655,199 +663,80 @@ def doNothing():
 # # New classes 
 # Classes in training
 
-# In[24]:
+# In[17]:
 
-class colorHSV:
-    '''Form a range of values for HSV colorspace filtering based on color:
+class cvFrame:
     
-    name -- a user readable name that includes one of the color ranges 
-            such as: 'Color One - red'
-    colorRange -- select from a predefined color range (default is 0)
-    
-        pre defined color ranges in terms of Hue (0-179)
-        
-        Range Number - human name - Hue Range
-        0            - full       - 0-179
-        1            - red        - 0-35
-        2            - yellow     - 25-65
-        3            - green      - 55-95
-        4            - blue       - 85-125
-        5            - indigo     - 115-155
-        6            - violet     - 145-179
-    '''
-    # class attributes
-    defaultRanges = [[0, 179, 'full'], [0, 35, 'red'], [25, 65, 'yellow'], [55, 95, 'green'], 
-                     [85, 125, 'blue'], [115, 155, 'indigo'], [145, 179, 'violet']]
-   
-    # maximum and minimum values for Hue, Sat, Val
-    hueRange = [0, 179]
-    satRange = [0, 255]
-    valRange = [0, 255]
-    
-    # track bar attributes
-    sliderHue = ['Hue-', 'Hue+']
-    sliderSat = ['S-', 'S+']
-    sliderVal = ['V-', 'V+']
-    sliderColRange = ['ColorRange']
-
-    #sliderHue = ['Hue-', 'Hue+']
-    #sliderSat = ['S-', 'S+']
-    #sliderVal = ['V-', 'V+']
-    #sliderColRange = ['CR']
-    
-    
-    
-    def __init__(self, name='default', colorRange=0):
-        '''Init an HSV Color Range object consiting of a 3 element numpy.array
-            lower -- lower end of color space range for filtering
-            upper -- upper end of color space range for filtering
-            colorRange -- one of the predefined color ranges; -1 by default
-            controlWinName - name for reffering to an openCV HighGUI window
+    def __init__(self, videoDev = 0, frameWidth = 500, name = 'Live'):
+        '''create a frame object that holds all of the frame, hsv frame and mask data for a filter
+        videoDev - numeration for video capture device; 0 is default
+        frameWidth - width in px of video capture; 500 is default
+        frame - cv2.VideoCapture(<video device>)
+        name - human readable name for refference 
+        hsvFrame - frame converted into HSV space
+        mask - dictonary of calculated masks
+        nonZero - dictionary of nonZero pixels 
+        result - the result of a bitwise_and of the frame and the mask 
         '''
-        #Attributes
+        self.cap = cv2.VideoCapture(videoDev)
+        #_, self.frame = self.cap.read()
+        self.frame = self.readFrame()
+        self.hsvFrame = self.cvtHSV()
+        #self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.name = name
-
-        # set the name for a control slider window
-        self.controlWinName = self.name + '_controls'
-         
-        # integer loop counter
-        iC=0
+        self.mask = {}
+        self.nonZero = {}
+        #self.mask = self.calcMask()
+        #self.result = self.calcRes()
         
-        # temporarily set self.colorRange to false
-        self.colorRange = False
-        for i in self.defaultRanges:
-            # create a regexp for finding the human readable color range in the name
-            regexp = self.defaultRanges[iC][2] + '.*'
-            # search the color name against the names in defaultRanges
-            m = re.search(regexp, self.name, re.IGNORECASE)
-            
-            # if a match has been made
-            if m is not None:
-                # set the color range equal to the loop counter
-                self.colorRange=iC
-                #stop looking here
-                break
-            
-            #increment the counter
-            iC += 1
-        # if a range name was not found, set the range to 0: full
-        if not self.colorRange:
-            self.colorRange = colorRange
-            
-        # set to default color range
-        self.setRangeDefault()
-        #self.copy = self.deepCopy()
     
-    def setRangeDefault(self):
-        '''use the predefined defaults to set hue range'''
-        # set the lower and upper ranges based on values from the default ranges
-        self.lower = self.setHSVvalues( [ self.defaultRanges[self.colorRange][0],
-                                        self.satRange[0], self.valRange[0]] )
-        self.upper = self.setHSVvalues( [self.defaultRanges[self.colorRange][1], 
-                                        self.satRange[1], self.valRange[1]] )
+    # ideally this should update the HSV frame as well.  Don't know how to make that happen
+    def readFrame(self, width = 500):
+        '''update the stored frame from the video capture device'''
+        #_, self.frame = self.cap.read() 
+        try:
+            _, tempFrame= self.cap.read()
+        except Exception, e:
+            print 'error reading frame:', e
+        
+        # look for bad data in the frame; if there's bad data simply set r =1 
+        # this is an ugly hack, but should allow things to continue running
+        try:
+            r = float(width) / tempFrame.shape[1]
+        except Exception, e:
+            print 'bad tempFrame.shape data:', e
+            r = 1.0
+        dim = (int(width), int(tempFrame.shape[0] * r))
+        resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
+        self.frame = resizedFrame
+        
+        # update the HSV space version of the frame
+        self.cvtHSV()
+        return self.frame
+        
+    def cvtHSV(self):
+        '''create an HSV version of the frame'''
+        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        return self.hsvFrame
+        
+    def release(self):
+        '''release the video capture device'''
+        self.cap.release()
     
-    def setHSVvalues(self, hsv = np.array( [0, 0, 0] )):
-        '''sets a list of values as type numpy.array()'''
-        return np.array(hsv)
+    def calcMask(self, name, lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
+        '''calculate a mask based on two np.array objects with HSV values'''
+        #self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
+        #self.nonZero = cv2.countNonZero(self.mask)
+        self.mask[name] = cv2.inRange(self.hsvFrame, lower, upper)
+        self.nonZero[name] = cv2.countNonZero(self.mask[name])
+        return self.mask
     
-    
-    def createTrackBars(self):
-        '''Create openCV HighGUI trackbars in a window that matches name + _contorls'''
-        
-        # create a named window to attach everything to
-        cv2.namedWindow(self.controlWinName)
-        
-        # Hue Sliders
-        cv2.createTrackbar(self.sliderHue[0], self.controlWinName,
-                          self.lower[0], self.hueRange[1], adjust)
-        cv2.createTrackbar(self.sliderHue[1], self.controlWinName,
-                          self.upper[0], self.hueRange[1], adjust)
-        
-        # saturation sliders
-        cv2.createTrackbar(self.sliderSat[0], self.controlWinName, 
-                          self.lower[1], self.satRange[1], adjust)
-        #cv2.createTrackbar(self.sliderSat[1], self.controlWinName, 
-        #                 self.upper[1], self.satRange[1], adjust)
-        
-        # value sliders
-        cv2.createTrackbar(self.sliderVal[0], self.controlWinName, 
-                          self.lower[2], self.valRange[1], adjust)
-        cv2.createTrackbar(self.sliderVal[1], self.controlWinName,
-                          self.upper[2], self.valRange[1], adjust)
-        
-        cv2.createTrackbar(self.sliderColRange[0], self.controlWinName,
-                          self.colorRange, len(self.defaultRanges)-1, adjust)
-        
-    def syncTrackBars(self):
-        '''record the position of openCV trackbars in lower and upper'''
-        
-        # make a copy for comparison later
-        oldHSV = copy.deepcopy(self)
-        #hue
-        self.lower[0] = cv2.getTrackbarPos(self.sliderHue[0], self.controlWinName)
-
-        self.upper[0] = cv2.getTrackbarPos(self.sliderHue[1],self.controlWinName)
-
-        #saturation
-        self.lower[1] = cv2.getTrackbarPos(self.sliderSat[0], self.controlWinName)
-        # currently unused
-        #self.upper[1] = cv2.getTrackbarPos(self.sliderSatat[1], self.controlWinName)
-
-        #value
-        self.lower[2] = cv2.getTrackbarPos(self.sliderVal[0], self.controlWinName)
-        self.upper[2] = cv2.getTrackbarPos(self.sliderVal[1], self.controlWinName)
-
-        #color range
-        self.colorRange = cv2.getTrackbarPos(self.sliderColRange[0], self.controlWinName)
-
-        # if the color range setting has changed, update the sliders
-        if self.colorRange != oldHSV.colorRange:
-            # use the new color range setting to update the hue values
-            self.setRangeDefault()
-            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
-            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])            
-        
-        # this method may cause the sliders to always be one frame behind in the update...
-        
-        # look for changes in the Hue sliders and update the color pallet as needed
-        if (self.lower[0] != oldHSV.lower[0]) or (self.upper[0] != oldHSV.upper[0]):
-        
-            self.update()   
-            
-
-    def update(self):
-        '''update windows and trackbars as needed'''
-        print 'do some stuff to update the HSV trackbars'
-        print 'do some stuff to update the colorRange trackbar'
-        # update the control windows with a new color swatch
-        updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                    colorRange=color.defaultRanges[color.colorRange][2])
-    
-        
-    def midBGRcolor(self):
-        '''return the middle value between the upper and lower hue values in BGR space'''
-        colorDelta=(self.upper[0] - self.lower[0])
-        # negative values don't make sense, set them to 0
-        if colorDelta < 0:
-            midHSVcolor = np.uint8([[[0, 0, 0]]])
-        else:    
-            midHSVcolor = np.uint8([[[self.lower[0] + (colorDelta)//2, 255, 255]]])
-        midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
-        return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
-        
-    def deepCopy(self):
-        '''make a duplicate object'''
-        # I think this causes some deep and awful recursion
-        #self.copy = copy.deepcopy(self)
-        return copy.deepcopy(self)
-    
-    # Ask martin about this again
-    def hasChanged(self):
-        '''compare self to a copy and if it has changed'''
-        pass
+    def calcRes(self):
+        self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
+        return self.result
 
 
-# In[25]:
+# In[18]:
 
 ### Vars that should probably live in a configuration file
 
@@ -879,8 +768,8 @@ myFrame = cvFrame(videoDevice)
 
 ##### TESTING #
 #create and open cv window for testing
-img = cv2.imread('./images/Demo_Start.png')
-cv2.imshow('test', img)
+#img = cv2.imread('./images/Demo_Start.png')
+#cv2.imshow('test', img)
 # TESTING #####
 
 
@@ -908,6 +797,7 @@ while True:
         cv2.waitKey(1)
         break
 
+    ####FIXME - I still don't love this.  There is probably a more pythonic way to do this.
     # send messages to websocket and display
     if myRunState.command is not None:
         # send a command to the web socket
@@ -918,44 +808,26 @@ while True:
         usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)        
         
     # read and convert frame
-    #myFrame.readFrame()
-    #### FIXME this can be done automagically in the class so it is always available
-    #myFrame.cvtHSV()
-    
-    
-    
+    myFrame.readFrame()
+        
     # sync trackbars 
-    # loop over each channel
-    ### FIXME this can be done in the class 
+    # loop over each channel and make updates as needed
     for color in channels:
         # sync the tracbars - this will update the color slider windows and color swatches
         color.syncTrackBars()
-        '''
-        changes = False
-        #make a copy of the color object for checking later 
-        oldColor = color.deepCopy()
-        # check with the openCV HighGUI for changes on the trackbars
-        color.syncTrackBars()
+        # calculate the mask based on the settings 
+        myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
+        # calculate resultant here? - this may be a bad idea as is not needed when paused (save some cycles)
+ 
+    if not runTimeState.
 
-        # if the color range slider has moved update the hue range and the sliders
-        if oldColor.colorRange != color.colorRange:
-            color.setRangeDefault()
-            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
-            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
-            changes=True
-
-        # if the hue sliders have moved, update color swatch
-        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
-            changes=True
-
-        # update the windows if only if things have changed
-        if changes:
-            # update the color swatch attached to each control window
-            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                        colorRange=color.defaultRanges[color.colorRange][2])
-        '''
+    #### TESTING #
+    cv2.imshow(myFrame.name, myFrame.frame)
+    cv2.imshow('DOWN', myFrame.mask['DOWN'])
+    cv2.imshow('UP', myFrame.mask['UP'])
+    # TESTING ####
     
-    # create mask
+    
     # calculate ratio
     # check web socket and write out data
     # update displays with current frame and messages
@@ -968,12 +840,28 @@ cv2.waitKey(1)
 ws.disconnect()
 
 
-# In[ ]:
+# In[12]:
+
+for color in channels:
+    myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
+    
+cv2.imshow('foo', myFrame.mask['DOWN'])
+cv2.imshow('bar', myFrame.mask['UP'])
+cv2.waitKey(1)
+
+
+# In[6]:
 
 usrMessages.msgList
+cv2.VideoCapture(0).release()
 
 
 # In[ ]:
+
+
+
+
+# In[13]:
 
 myFrame.release()
 cv2.destroyAllWindows()
