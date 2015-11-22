@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[1]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -16,7 +16,7 @@ import time
 
 # # Classes
 
-# In[2]:
+# In[ ]:
 
 ## Classes
 class outputValue:
@@ -448,9 +448,7 @@ class keyHandler:
             self.sendCommand = None
             # reset the display text to ''
             self.displayMsg = ''
-            self.msgType = ''
-    
-    
+            self.msgType = ''    
 
     def printHelp(self):
         #for key in self.helpDict:
@@ -586,7 +584,7 @@ class runTimeState:
 
 # # sub routines
 
-# In[3]:
+# In[ ]:
 
 
 def adjust(x):
@@ -663,7 +661,7 @@ def doNothing():
 # # New classes 
 # Classes in training
 
-# In[17]:
+# In[ ]:
 
 class cvFrame:
     
@@ -677,6 +675,7 @@ class cvFrame:
         mask - dictonary of calculated masks
         nonZero - dictionary of nonZero pixels 
         result - the result of a bitwise_and of the frame and the mask 
+        joinedResultImg - concantination of all resultant frames along axis 1
         '''
         self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
@@ -686,6 +685,9 @@ class cvFrame:
         self.name = name
         self.mask = {}
         self.nonZero = {}
+        self.result = {}
+        self.joinedResultImg = None
+        self.joinedResultName = ''
         #self.mask = self.calcMask()
         #self.result = self.calcRes()
         
@@ -723,7 +725,7 @@ class cvFrame:
         '''release the video capture device'''
         self.cap.release()
     
-    def calcMask(self, name, lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
+    def calcMask(self, name = 'defaultName', lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
         '''calculate a mask based on two np.array objects with HSV values'''
         #self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
         #self.nonZero = cv2.countNonZero(self.mask)
@@ -731,12 +733,13 @@ class cvFrame:
         self.nonZero[name] = cv2.countNonZero(self.mask[name])
         return self.mask
     
-    def calcRes(self):
-        self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
+    def calcRes(self, name = 'defaultName'):
+        '''calculate a resultant image based on the mask and the live frame'''
+        self.result[name] = cv2.bitwise_and(self.frame, self.frame, mask = self.mask[name])
         return self.result
 
 
-# In[18]:
+# In[ ]:
 
 ### Vars that should probably live in a configuration file
 
@@ -807,7 +810,7 @@ while True:
         # add new messages
         usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)        
         
-    # read and convert frame
+    # read and convert frame from video device
     myFrame.readFrame()
         
     # sync trackbars 
@@ -819,15 +822,23 @@ while True:
         myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
         # calculate resultant here? - this may be a bad idea as is not needed when paused (save some cycles)
  
-    if not runTimeState.
+    # display the resultant images if the display is not paused
+    if not myRunState.displayOff:
+        for color in channels:
+            # if the display is not off, calculate the resultant frame and display
+            myFrame.calcRes(color.name)
+            # add in the pixle count 
+            addText(myFrame.result[color.name], text = 'NonZero pix: ' + str(myFrame.nonZero[color.name]))
+            # add in the HSV settings
+            
+            # display each image
+            cv2.imshow(color.name, myFrame.result[color.name])
+            # find a way to np.concantinate the images
+        # display the live image    
+        # add in messages and expire old messages
+        cv2.imshow(myFrame.name, myFrame.frame)
+        
 
-    #### TESTING #
-    cv2.imshow(myFrame.name, myFrame.frame)
-    cv2.imshow('DOWN', myFrame.mask['DOWN'])
-    cv2.imshow('UP', myFrame.mask['UP'])
-    # TESTING ####
-    
-    
     # calculate ratio
     # check web socket and write out data
     # update displays with current frame and messages
@@ -840,7 +851,12 @@ cv2.waitKey(1)
 ws.disconnect()
 
 
-# In[12]:
+# In[ ]:
+
+help(addText)
+
+
+# In[ ]:
 
 for color in channels:
     myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
@@ -850,7 +866,7 @@ cv2.imshow('bar', myFrame.mask['UP'])
 cv2.waitKey(1)
 
 
-# In[6]:
+# In[ ]:
 
 usrMessages.msgList
 cv2.VideoCapture(0).release()
@@ -861,7 +877,7 @@ cv2.VideoCapture(0).release()
 
 
 
-# In[13]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
@@ -1025,6 +1041,7 @@ while True:
 
     # capture a frame and convert to HSV space
     myFrame.readFrame()
+    ####FIXME move this into the class as part of self.readFrame
     myFrame.cvtHSV()
 
     # loop over each channel
