@@ -655,6 +655,7 @@ def sendCommand(websocket, command = 'null', num = 1):
  
 def doNothing():
  '''placeholder function that does nothing'''
+ ####FIXME - this can probably be fixed by using the @staticmethod decorator in the class
  pass
 
 
