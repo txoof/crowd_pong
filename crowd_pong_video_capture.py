@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[59]:
+# In[ ]:
 
 import cv2
 import numpy as np
@@ -20,7 +20,7 @@ import time
 # ### TODO:
 # * Classes should probably be classified
 
-# In[67]:
+# In[ ]:
 
 ## Classes
 class outputValue:
@@ -515,7 +515,7 @@ class runTimeState:
 
 # # sub routines
 
-# In[68]:
+# In[ ]:
 
 
 def adjust(x):
@@ -605,7 +605,7 @@ def doNothing():
 # * Add help text, etc. to windows
 # 
 
-# In[69]:
+# In[ ]:
 
 ### Vars that should probably live in a configuration file
 
@@ -730,7 +730,7 @@ cv2.waitKey(1)
 ws.disconnect()
 
 
-# In[63]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
@@ -739,7 +739,7 @@ cv2.waitKey(1)
 ws.disconnect()
 
 
-# In[65]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
