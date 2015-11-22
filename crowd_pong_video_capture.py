@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[59]:
 
 import cv2
 import numpy as np
@@ -15,8 +15,12 @@ import time
 
 
 # # Classes
+# The classes need a bit of a rewrite to be more object oriented. An overhaul of the runtimestate needs to be done.  See the black notebook (22 November) for ideas
+# 
+# ### TODO:
+# * Classes should probably be classified
 
-# In[ ]:
+# In[67]:
 
 ## Classes
 class outputValue:
@@ -225,25 +229,35 @@ class colorHSV:
             midHSVcolor = np.uint8([[[self.lower[0] + (colorDelta)//2, 255, 255]]])
         midBGRcolor = cv2.cvtColor(midHSVcolor, cv2.COLOR_HSV2BGR)
         return int(midBGRcolor[0][0][0]), int(midBGRcolor[0][0][1]), int(midBGRcolor[0][0][2])
-"""
+
 class cvFrame:
     
-    def __init__(self, videoDev = 0, frameWidth = 500):
+    def __init__(self, videoDev = 0, frameWidth = 500, name = 'Live'):
         '''create a frame object that holds all of the frame, hsv frame and mask data for a filter
         videoDev - numeration for video capture device; 0 is default
         frameWidth - width in px of video capture; 500 is default
         frame - cv2.VideoCapture(<video device>)
         name - human readable name for refference 
         hsvFrame - frame converted into HSV space
-        mask - a mask calculated based on properties passed
+        mask - dictonary of calculated masks
+        nonZero - dictionary of nonZero pixels 
         result - the result of a bitwise_and of the frame and the mask 
+        joinedResultImg - concantination of all resultant frames along axis 1
         '''
         self.cap = cv2.VideoCapture(videoDev)
         #_, self.frame = self.cap.read()
         self.frame = self.readFrame()
-        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        self.mask = self.calcMask()
-        self.result = self.calcRes()
+        self.hsvFrame = self.cvtHSV()
+        #self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        self.name = name
+        self.mask = {}
+        self.nonZero = {}
+        self.result = {}
+        self.joinedResultImg = None
+        self.joinedResultName = ''
+        #self.mask = self.calcMask()
+        #self.result = self.calcRes()
+        
     
     # ideally this should update the HSV frame as well.  Don't know how to make that happen
     def readFrame(self, width = 500):
@@ -264,6 +278,9 @@ class cvFrame:
         dim = (int(width), int(tempFrame.shape[0] * r))
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
         self.frame = resizedFrame
+        
+        # update the HSV space version of the frame
+        self.cvtHSV()
         return self.frame
         
     def cvtHSV(self):
@@ -275,16 +292,20 @@ class cvFrame:
         '''release the video capture device'''
         self.cap.release()
     
-    def calcMask(self, lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
+    def calcMask(self, name = 'defaultName', lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
         '''calculate a mask based on two np.array objects with HSV values'''
-        self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
-        self.nonZero = cv2.countNonZero(self.mask)
+        #self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
+        #self.nonZero = cv2.countNonZero(self.mask)
+        self.mask[name] = cv2.inRange(self.hsvFrame, lower, upper)
+        self.nonZero[name] = cv2.countNonZero(self.mask[name])
         return self.mask
     
-    def calcRes(self):
-        self.result = cv2.bitwise_and(self.frame, self.frame, mask = self.mask)
+    def calcRes(self, name = 'defaultName'):
+        '''calculate a resultant image based on the mask and the live frame'''
+        self.result[name] = cv2.bitwise_and(self.frame, self.frame, mask = self.mask[name])
         return self.result
-"""
+    
+    
         
 class webSocket:
     #### Fixme - add a disconnect method
@@ -328,9 +349,12 @@ class webSocket:
                 pass
     
     def disconnect(self):
-        '''not yet implemented'''
-        print 'disconnect does NOTHING'
-        pass
+        '''disconnect from socket'''
+        if self.socket.connected:
+            try:
+                self.socket.disconnect()
+            except Exception, e:
+                self.isConnected = False
     
     def send(self, msg):
         try:
@@ -369,6 +393,8 @@ class msgHandler:
                 self.delMsg(key)     
     
 ####FIXME - change the name to keyHandler   
+# martin suggests adding a method that builds the key map
+# build the key map as '<key>': ('help message', function_call, object(?))
 class keyHandlerN:
     '''handle key presses from openCV waitkey()
     keyPressDEC - Decimal equivalent of value
@@ -389,105 +415,10 @@ class keyHandlerN:
         self.keyPressDEC = self.keyPress & 0xFF
         self.keyPressCHR = chr(self.keyPressDEC)
 
-####FIXME remove this class it has been replaced by keyHandlerN
-class keyHandler:
-    '''handle key presses'''
-    helpDict = {
-        'C': 'Restart calibration',
-        'h': 'Print help text to screen',
-        'P': 'Restart point (do over)',
-        'p': 'Pause live display',
-        'Q': 'Quit',
-        'R': 'Restart game',
-        'u': 'Unpause live display',
-        'Z': 'Return to credit screen'        
-    }
-    
-    def __init__(self):
-        '''keyPress - OpenCV waitKey() value
-        keyPressDEC - Decimal equivalent of value
-        keyPressCHR - ASCII character value
-        functionCall - function to execute based on keypress
-        sendCommand - command to send to websocket server
-        functionMap - map keypresses to functions
-        displayMsg - text to display in live window
-        msgType - type of message: info, 
-        
-        '''
-        self.keyPress = None
-        self.keyPressDEC = 255
-        self.keyPressCHR = None
-        self.functionCall = doNothing()
-        self.sendCommand = None
-        self.displayMsg = ''
-        self.msgType = ''
-        self.functionMap = {
-            'C': self.calibration,
-            'h': self.printHelp,
-            'P': self.restartPoint,
-            'p': self.pauseDisplay,
-            'Q': self.quit,
-            'R': self.restartGame,
-            'u': self.unpauseDisplay,
-            'Z': self.credits,
-        }
-        
-    
-    def keyInput(self, keyPress):       
-        self.keyPress = keyPress
-        self.keyPressDEC = self.keyPress & 0xFF
-        self.keyPressCHR = chr(self.keyPressDEC)
-       
-        if self.keyPressCHR in self.functionMap:
-            self.functionMap[self.keyPressCHR]()
-    
-        #elif self.keyPressDEC == 255:
-        # if the key is not in the function map reset
-        else:
-            # reset the send command to none 
-            self.sendCommand = None
-            # reset the display text to ''
-            self.displayMsg = ''
-            self.msgType = ''    
-
-    def printHelp(self):
-        #for key in self.helpDict:
-        #    print key, self.helpDict[key]
-        self.returnCmd(-4, 'info')
-    
-    def quit(self):
-        self.functionCall = doNothing()
-        raise loopHalt
-        
-    def restartGame(self):
-        self.returnCmd(3, 'info')
-
-    def restartPoint(self):
-        self.returnCmd(4, 'info')
-   
-    def calibration(self):
-        self.returnCmd(5, 'info')
-        
-    def credits(self):
-        self.returnCmd(6, 'info')
-        
-    def pauseDisplay(self):
-        self.returnCmd(-2, 'state')
-    
-    def unpauseDisplay(self):
-        self.returnCmd(-3, 'state')
-    
-    def returnCmd(self, command, msgType = 'None'):
-        self.sendCommand = command
-        if self.keyPressCHR in self.helpDict:
-            helpDict = self.helpDict[self.keyPressCHR]
-        else:
-            helpDict = 'Undocumented feature'
-        self.displayMsg = helpDict + ': Code ' + str(self.sendCommand)
-        self.msgType = msgType
-
 class runTimeState:
     ### Consider merging in the runTime variable as runningTime
+    
+    # consider moving the lookups into the key handler
     '''container for runtime variables and key handler
     pause - pause state (bool)
     displayOff - display state (bool)
@@ -533,8 +464,8 @@ class runTimeState:
             # reset the send command to none 
             self.command = None
             # reset the display text to ''
-            self.displayMsg = ''
-            self.msgType = ''
+            self.displayMsg = None
+            self.msgType = None
             
    
     
@@ -557,14 +488,14 @@ class runTimeState:
     def pauseDisplay(self):
         self.pause = True
         self.displayOff = True
-        self.sendCmd(-2, 'state')
+        self.sendCmd(-2, 'info')
         
     def unpauseDisplay(self):
         self.pause = False
         self.displayOff = False
-        self.sendCmd(-3, 'state')
+        self.sendCmd(-3, 'info')
 
-    def sendCmd(self, command ='null', msgType = 'info'):
+    def sendCmd(self, command = None, msgType = 'info'):
         '''format a command to display to user and send to websocket
         command - command to send
         msgType - type of message (info, state, etc.)'''
@@ -584,7 +515,7 @@ class runTimeState:
 
 # # sub routines
 
-# In[ ]:
+# In[68]:
 
 
 def adjust(x):
@@ -664,83 +595,17 @@ def doNothing():
 
 # In[ ]:
 
-class cvFrame:
-    
-    def __init__(self, videoDev = 0, frameWidth = 500, name = 'Live'):
-        '''create a frame object that holds all of the frame, hsv frame and mask data for a filter
-        videoDev - numeration for video capture device; 0 is default
-        frameWidth - width in px of video capture; 500 is default
-        frame - cv2.VideoCapture(<video device>)
-        name - human readable name for refference 
-        hsvFrame - frame converted into HSV space
-        mask - dictonary of calculated masks
-        nonZero - dictionary of nonZero pixels 
-        result - the result of a bitwise_and of the frame and the mask 
-        joinedResultImg - concantination of all resultant frames along axis 1
-        '''
-        self.cap = cv2.VideoCapture(videoDev)
-        #_, self.frame = self.cap.read()
-        self.frame = self.readFrame()
-        self.hsvFrame = self.cvtHSV()
-        #self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        self.name = name
-        self.mask = {}
-        self.nonZero = {}
-        self.result = {}
-        self.joinedResultImg = None
-        self.joinedResultName = ''
-        #self.mask = self.calcMask()
-        #self.result = self.calcRes()
-        
-    
-    # ideally this should update the HSV frame as well.  Don't know how to make that happen
-    def readFrame(self, width = 500):
-        '''update the stored frame from the video capture device'''
-        #_, self.frame = self.cap.read() 
-        try:
-            _, tempFrame= self.cap.read()
-        except Exception, e:
-            print 'error reading frame:', e
-        
-        # look for bad data in the frame; if there's bad data simply set r =1 
-        # this is an ugly hack, but should allow things to continue running
-        try:
-            r = float(width) / tempFrame.shape[1]
-        except Exception, e:
-            print 'bad tempFrame.shape data:', e
-            r = 1.0
-        dim = (int(width), int(tempFrame.shape[0] * r))
-        resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
-        self.frame = resizedFrame
-        
-        # update the HSV space version of the frame
-        self.cvtHSV()
-        return self.frame
-        
-    def cvtHSV(self):
-        '''create an HSV version of the frame'''
-        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        return self.hsvFrame
-        
-    def release(self):
-        '''release the video capture device'''
-        self.cap.release()
-    
-    def calcMask(self, name = 'defaultName', lower = np.array( [0, 0, 0] ), upper = np.array( [179, 255, 255] )):
-        '''calculate a mask based on two np.array objects with HSV values'''
-        #self.mask = cv2.inRange(self.hsvFrame, lower, upper, )
-        #self.nonZero = cv2.countNonZero(self.mask)
-        self.mask[name] = cv2.inRange(self.hsvFrame, lower, upper)
-        self.nonZero[name] = cv2.countNonZero(self.mask[name])
-        return self.mask
-    
-    def calcRes(self, name = 'defaultName'):
-        '''calculate a resultant image based on the mask and the live frame'''
-        self.result[name] = cv2.bitwise_and(self.frame, self.frame, mask = self.mask[name])
-        return self.result
 
 
-# In[ ]:
+
+# # Main Loop
+# ### TODO:
+# * Rewrite to be more object oriented
+# * Join resultant windows together
+# * Add help text, etc. to windows
+# 
+
+# In[69]:
 
 ### Vars that should probably live in a configuration file
 
@@ -749,7 +614,6 @@ socketURL = 'ws://localhost:9000/ws'
 color0Name = 'UP'
 color1Name = 'DOWN'
 videoDevice = 0 
-
 
 ### Init Objects
 # create a connection to the web socket handler object
@@ -770,12 +634,8 @@ usrMessages = msgHandler()
 myFrame = cvFrame(videoDevice)
 
 
-##### TESTING #
-#create and open cv window for testing
-#img = cv2.imread('./images/Demo_Start.png')
-#cv2.imshow('test', img)
-# TESTING #####
-
+# message handler object 
+usrMessages = msgHandler()
 
 # initialize track bar windows
 # loop counter for placing windows
@@ -800,7 +660,7 @@ while True:
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         break
-
+        
     ####FIXME - I still don't love this.  There is probably a more pythonic way to do this.
     # send messages to websocket and display
     if myRunState.command is not None:
@@ -809,11 +669,15 @@ while True:
         # delete old messages of the same type just created
         usrMessages.delAllMsg(myRunState.msgType)
         # add new messages
-        usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)        
+        usrMessages.addMsg(myRunState.msgType, myRunState.displayMsg)   
+    
+    # clear out info messages every 5 seconds
+    if usrMessages.msgTime.hasElapsed(5):
+        usrMessages.delAllMsg('info')
         
     # read and convert frame from video device
     myFrame.readFrame()
-        
+     
     # sync trackbars 
     # loop over each channel and make updates as needed
     for color in channels:
@@ -821,337 +685,68 @@ while True:
         color.syncTrackBars()
         # calculate the mask based on the settings 
         myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
-        # calculate resultant here? - this may be a bad idea as is not needed when paused (save some cycles)
- 
+   
+    # calculate ratio
+    ####FIXME - this should be moved into colorHSV class
+    # this is a bit of a mess to deal with because of the dictionary nature of the nonZero dictionary
+    colorRatio = ratio(myFrame.nonZero['UP'], myFrame.nonZero['DOWN'])
+    # FIXME - kludgy hack that does not use the msg handler correctly.
+    usrMessages.msgList['output value'] = 'ratio: ' + str(colorRatio)
+    
+    # check for websocket connection and send the video output value
+    if ws.isConnected:
+        ws.send(str(colorRatio))
+        usrMessages.delAllMsg('error.socket')
+    else:    
+        # attempt a reconnection every N seconds (default is 3)
+        ws.reconnect(3)
+        ####FIXME kludgy abuse of the class - adding messages manually to avoid adding serial number
+        usrMessages.msgList['error.socket'] = 'socket not connected; attempting reconnect'
+        myRunState.pause = False  
+        myRunState.displayOff = False
+    
     # display the resultant images if the display is not paused
     if not myRunState.displayOff:
         for color in channels:
             # if the display is not off, calculate the resultant frame and display
             myFrame.calcRes(color.name)
             # add in the pixle count 
-            addText(myFrame.result[color.name], text = 'NonZero pix: ' + str(myFrame.nonZero[color.name]))
+            addText(myFrame.result[color.name], text = color.name + ' NonZero pixels: ' 
+                    + str(myFrame.nonZero[color.name]))
             # add in the HSV settings
+            addText(myFrame.result[color.name], text = 'lower: ' + str(color.lower), position = (10, 50))
+            addText(myFrame.result[color.name], text = 'upper: ' + str(color.upper), position = (10, 75))
             
-            # display each image
-            cv2.imshow(color.name, myFrame.result[color.name])
-            # find a way to np.concantinate the images
-        # display the live image    
-        # add in messages and expire old messages
-        cv2.imshow(myFrame.name, myFrame.frame)
-        
-
-    # calculate ratio
-    # check web socket and write out data
-    # update displays with current frame and messages
-    # delete old messages of type info, state
-    
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)
-# FIXME disconnect gracefully from the websocket 
-ws.disconnect()
-
-
-# In[ ]:
-
-help(addText)
-
-
-# In[ ]:
-
-for color in channels:
-    myFrame.calcMask(lower = color.lower, upper = color.upper, name = color.name)
-    
-cv2.imshow('foo', myFrame.mask['DOWN'])
-cv2.imshow('bar', myFrame.mask['UP'])
-cv2.waitKey(1)
-
-
-# In[ ]:
-
-usrMessages.msgList
-cv2.VideoCapture(0).release()
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)
-# FIXME disconnect gracefully from the websocket 
-ws.disconnect()
-
-
-# In[ ]:
-
-
-# init variables
-
-### Configuration Variables ###
-
-# color channels
-colorA = colorHSV('UP - Green')
-colorB = colorHSV('DOWN - Violet')
-channels = [colorA, colorB]
-
-
-# display name for output window
-channelDisplayName = colorA.name + ' : ' + colorB.name
-liveDisplayName = 'Live'
-# live frame object
-myFrame = cvFrame(0)
-
-# video stream device
-videoDev = 1
-
-#web Socket Server
-socketURL = 'ws://localhost:9000/ws'
-
-### Variable Inititialziation ###
-
-#dictionary for saving the pixel count
-pixelCount = {}
-
-# dictionary for saving the calculated masks
-masks = {}
-
-#set output value to class outputValue; variable be sent to web socket
-output = outputValue
-
-# default settings
-pause = False
-displayOff = False
-
-
-##### Non User Defined Objects ####
-
-# init the list of important display messages
-usrMessages = msgHandler()
-
-# create a connection to the web socket handler object
-ws = webSocket(socketURL)
-ws.connect()
-
-# keep track of running time as an elapsedTime object
-runTime = elapsedTime()
-# keep track of time that a message is displayed
-msgTime = elapsedTime()
-
-# define the keyhandler object
-myKeyHandler = keyHandler()
-
-#### TESTING
-myRunState = runTimeState()
-
-### Initialize Systems ###
-# init trackbars for each channel
-
-# loop counter for placing windows
-windowCount = 0
-for color in channels:
-    color.createTrackBars()
-    # shift each window over a bit
-    cv2.moveWindow(color.controlWinName, windowCount*400, 0)
-    updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                        colorRange=color.defaultRanges[color.colorRange][2])
-    windowCount += 1
-
-#FIXME this is kludgy and I don't love it.  Perhaps a function/class to do this
-# record all created windows in a list, then move them all logically together 
-# right now they are moved as they are created (see above loop)
-# experiment for moving windows around 
-cv2.namedWindow(channelDisplayName)
-cv2.namedWindow(liveDisplayName)
-cv2.moveWindow(channelDisplayName, 0, 300)
-cv2.moveWindow(liveDisplayName, 0, 350) 
-
-    
-    
-# begin looping until user quits
-while True:     
-   
-    # capture keypresses and handle them
-    
-    #### TESTING 
-    myKeyPress = cv2.waitKey(1)
-    # halt on loopHalt exception
-    try:
-        myKeyHandler.keyInput(myKeyPress)
-        # TESTING - switch this line back
-        #myKeyHandler.keyInput(cv2.waitKey(1))
-        #execute the functioncall that has been set based on keyPress
-        myKeyHandler.functionCall
-    except loopHalt:
-        # clean up on halt exception
-        myFrame.release()
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
-        break
-    
-    
-    #### TESTING - trying out new keyhandler
-    myRunState.keyInput(myKeyPress)
-    
-    
-    
-    # handle key presses
-    
-    if myKeyHandler.sendCommand is not None:
-        # record the time that a keypress came in
-        msgTime.setTime()
-        sendCommand(command = myKeyHandler.sendCommand, websocket = ws)
-        usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()), myKeyHandler.displayMsg)
-        # handle special cases (pause, unpause, help)
-        
-        ##### FIXME - this is not very pythonic. How can I do this without the messy
-        # if statements? pause and unpause need to set special local variables
-        # This is awful, you need to know what each code is! Not readable. :(
-        # pause
-        if myKeyHandler.sendCommand == -2:
-            pause = True
-            displayOff = True
-            usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()), myKeyHandler.displayMsg)
-
-        # unpause
-        if myKeyHandler.sendCommand == -3:
-            pause = False
-            displayOff = False
-            usrMessages.delAllMsg(myKeyHandler.msgType)
             
-        # help
-        if myKeyHandler.sendCommand == -4:
-            #FIXME - hackish way of dealing with the fact that 
-            # messages are one-liners and each message needs a unique id 
-            # based on the epochtime in seconds serial number
-            idCounter = 0.0
-            for key in myKeyHandler.helpDict:
-                usrMessages.addMsg(myKeyHandler.msgType+str(msgTime.timeNow()+idCounter), 
-                                  key + ': ' + myKeyHandler.helpDict[key])
-                # increment idCounter
-                idCounter += .1 
-
-    # check for changes in trackbar
-    # update control panels and color swatches
-    # update live frame 
-    # calculate the mask for each channel
-
-    # capture a frame and convert to HSV space
-    myFrame.readFrame()
-    ####FIXME move this into the class as part of self.readFrame
-    myFrame.cvtHSV()
-
-    # loop over each channel
-    for color in channels:
-        changes = False
-        #make a copy of the color object for checking later 
-        oldColor = color.copy()
-        # check with the openCV HighGUI for changes on the trackbars
-        color.syncTrackBars()
-
-        # if the color range slider has moved update the hue range and the sliders
-        if oldColor.colorRange != color.colorRange:
-            color.setRangeDefault()
-            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
-            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
-            changes=True
-
-        # if the hue sliders have moved, update color swatch
-        if (oldColor.lower[0] != color.lower[0]) or (oldColor.upper[0] != color.upper[0]):
-            changes=True
-
-        # update the windows if only if things have changed
-        if changes:
-            # update the color swatch attached to each control window
-            updateControlWindow(color.controlWinName, color.midBGRcolor(), 
-                        colorRange=color.defaultRanges[color.colorRange][2])
-
-        # calculate the masks and pixel count 
-        masks[color.name] = myFrame.calcMask(color.lower, color.upper)
-        pixelCount[color.name] = myFrame.nonZero
-
-    # calculate the ratio of colors in terms of a value between -1 and 1
-    output.value = ratio(pixelCount[colorA.name], pixelCount[colorB.name])
-    
-    ####FIXME - the ws.connect should try every N cycles, not every cycle
-    # check for websocket connection and send the video output value
-    if ws.isConnected:
-        ws.send(str(output.value))
-        usrMessages.delMsg('error.socket')
-    else:    
-        # attempt a reconnection every N seconds (default is 3)
-        ws.reconnect(3)
-        usrMessages.addMsg('error.socket', 'socket not connected; attempting reconnect')
-    
-   
-    # allow messages to be displayed for (N) seconds (refreshed every time a new key is pressed)
-    if msgTime.hasElapsed(5):
-        
-        #clean out "info" messages after every update period has passed 
-        usrMessages.delAllMsg('info')
- 
-    #update the pause screen every 5 seconds
-    if displayOff and runTime.hasElapsed(5):
-        runTime.setTime()
-        # set pause to True to force an update of the pauseframe 
-        ####FIXME this is a kludge. Find a better way to handle pausing?
-        pause = True        
-        
-    # pause live updating and destroy some windows to save memory
-    if pause and displayOff: 
-        pauseFrame = myFrame.frame
-        # destroy unneeded windows
-        cv2.destroyWindow(channelDisplayName)
-        # display messages from the message handler
-        displayMessages(pauseFrame, usrMessages.msgList)
-        cv2.imshow(liveDisplayName, pauseFrame)
-        # unset pause condition
-        pause = False       
-             
-    # calculate the resultant image for each channel
-    # display live, result channels or pause message
-    if not displayOff:
-        # FIXME! Hack that does not use the class
-        # I can't figure out how to do this using the class methods I have built.  
-        # I would rather display each result frame from within a for loop like everything else
-        # Unfortunately the mask is not recorded in the object so the last mask that is calculated
-        # is saved and the result is based on ONLY that structure.
-        
-        # generates resultant frames with the following information:
-        # Lower HSV, Upper HSV, indication of "direction" for paddle/bat in pong
-        resA = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorA.name])
-        addText(resA, text = 'lower: ' + str(colorA.lower), textColor = colorA.midBGRcolor())
-        addText(resA, text = 'upper: ' + str(colorA.upper), position = (10, 50), textColor = colorA.midBGRcolor())
-        # direction of inflluence
-        addText(resA, text = 'UP', position = (10, 100), textColor = colorA.midBGRcolor())
-        
-        resB = cv2.bitwise_and(myFrame.frame, myFrame.frame, mask = masks[colorB.name])
-        addText(resB, text = 'lower: ' + str(colorB.lower), textColor = colorB.midBGRcolor())
-        addText(resB, text = 'upper: ' + str(colorB.upper), position = (10, 50), textColor = colorB.midBGRcolor())
-        # direction of influence
-        addText(resB, text = 'DOWN', position = (10, 100), textColor = colorB.midBGRcolor())
-       
-    
-        #cv2.imshow(colorA.name, resA)
-        #cv2.imshow(colorB.name, resB)
-        # join the resultant windows together horizontally (axis=1) and display
-        cv2.imshow(channelDisplayName, np.concatenate((resA, resB), axis = 1))
-        
-        # add messages to the Live window 
-        usrMessages.msgList['output value'] = 'ratio: ' + str(output.value)
+        ####FIXME kludge to join the windows together     
+        cv2.imshow('UP & DOWN', np.concatenate((myFrame.result['UP'], myFrame.result['DOWN'] ), axis = 1))    
         displayMessages(myFrame.frame, usrMessages.msgList)
-        cv2.imshow(liveDisplayName, myFrame.frame)
+        cv2.imshow(myFrame.name, myFrame.frame)
+    
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)
+# FIXME disconnect gracefully from the websocket 
+ws.disconnect()
 
 
-
-
-# In[ ]:
+# In[63]:
 
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+# FIXME disconnect gracefully from the websocket 
+ws.disconnect()
+
+
+# In[65]:
+
+myFrame.release()
+cv2.destroyAllWindows()
+cv2.waitKey(1)
+
+
+# In[ ]:
+
+
 
