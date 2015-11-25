@@ -689,10 +689,23 @@ while True:
     if len(myKeyHandler.methodReturn) > 0:
         print myKeyHandler.methodReturn
 
+
+    ####FIXME bodge for adding upper and lower text to each frame
+    channelInfo ={}
+    for color in channels:
+        channelInfo[color.name] = (color.lower, color.upper)
     if myRunTime.displayOn:
         cv2.imshow(myFrame.name, myFrame.frame)
+        
+        
         for key in myFrame.result:
-            addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
+            # bodge for adding text for testing
+            resultText = []
+            resultText.append('NonZero Px: ' + str(myFrame.nonZero[key]) )
+            resultText.append('L: ' + str(channelInfo[key][0]))
+            resultText.append('U: ' + str(channelInfo[key][1]))
+            #addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
+            addText(myFrame.result[key], resultText)
         # this is a bit kludgy, but it is the simplest way to join two frames together
         cv2.imshow('Up & Down', np.concatenate((myFrame.result[color0], myFrame.result[color1]), axis = 1))
 
@@ -711,9 +724,4 @@ myWebSocket.disconnect()
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[ ]:
-
-
 
