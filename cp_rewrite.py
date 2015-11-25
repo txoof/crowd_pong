@@ -407,6 +407,7 @@ class cvFrame:
         
     
     def checkCams(self):
+        '''enumerate the connected and readable video devices'''
         cameraList = []
         for i in range(0, 10):
             connected, _ = cv2.VideoCapture(i).read()
@@ -417,13 +418,14 @@ class cvFrame:
     
     
     def changeVideo(self):
+        '''cycle through available video devices'''
         numCameras = len(self.connectedCams)
         self.cameraPointer += 1
         if self.cameraPointer > numCameras -1:
             self.cameraPointer = 0
         self.videoDev = self.connectedCams[self.cameraPointer]
         self.cap = cv2.VideoCapture(self.videoDev)
-        return (-3, 'changed video device to', self.videoDev)
+        return (-3, 'changed video device to ' + str(self.videoDev))
     
     def increaseFrameSize(self):
         '''increase sampled frame size'''
@@ -645,9 +647,6 @@ while True:
         # get key input every cycle and it's response
         myKeyHandler.handleKey(cv2.waitKey(1))
     except LoopHalt:
-        #myFrame.release()
-        #cv2.destroyAllWindows()
-        #cv2.waitKey(1)
         break
         
     # read current frame
@@ -712,4 +711,9 @@ myWebSocket.disconnect()
 myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[ ]:
+
+
 

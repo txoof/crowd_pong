@@ -214,6 +214,7 @@ class colorHSV:
             self.update()        
 
     def update(self):
+        ####FIXME I don't think this is used anywhere
         '''update windows and trackbars as needed'''
         # update the control windows with a new color swatch
         updateControlWindow(color.controlWinName, color.midBGRcolor(), 
@@ -308,7 +309,6 @@ class cvFrame:
     
         
 class webSocket:
-    #### Fixme - add a disconnect method
     '''create a web socket connection
     url - complete url in the form of ws://host:<port>/path
     socket - websocket object
