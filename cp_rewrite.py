@@ -449,8 +449,8 @@ class cvFrame:
         return (-3, 'reset frame size')
     
     def readFrame(self):
-        width = self.frameWidth
         '''update captured frame capture device'''
+        width = self.frameWidth
         try:
             _, tempFrame = self.cap.read()
         except Exception, e:
@@ -466,6 +466,7 @@ class cvFrame:
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
             
         self.frame = resizedFrame
+        # convert to HSV space immediately 
         self.cvtHSV()
         return self.frame
     
@@ -652,17 +653,17 @@ while True:
     # read current frame
     myFrame.readFrame()
 
-    # capture frame, calculate masks
+    # capture frame, update track bars, calculate masks
     for color in channels:
         color.syncTrackBars()
         myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
+        # only calculate resultant frames if the display is on
         if myRunTime.displayOn:
             myFrame.calcResult(color.name)
 
-    # calculate colorRatio
+    # calculate ratio of pixels in each channel
     colorRatio = ratio(myFrame.nonZero[color0], myFrame.nonZero[color1])
-    userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)
-            
+    userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)        
     
     # add message text to the frame
     msgList = []
@@ -675,9 +676,8 @@ while True:
         # send command messages to the web socket
         if len(myKeyHandler.methodReturn) > 0 and myKeyHandler.methodReturn[0] > 0:
             myWebSocket.sendStr(myKeyHandler.methodReturn[0])
-        #### TESTING #
+        # send color ratio to web socket
         myWebSocket.sendStr(colorRatio)
-        # TESTING ####
         # remove websocket errors
         userMessages.delMsg('error.websocket')
     else:
@@ -692,11 +692,14 @@ while True:
 
     ####FIXME bodge for adding upper and lower text to each frame
     channelInfo ={}
+    # get the color channel names and values and store in dictionary
     for color in channels:
         channelInfo[color.name] = (color.lower, color.upper)
+    
+    # update live and resultant windows
     if myRunTime.displayOn:
+        #live window
         cv2.imshow(myFrame.name, myFrame.frame)
-        
         
         for key in myFrame.result:
             # bodge for adding text for testing
