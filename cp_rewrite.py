@@ -657,7 +657,7 @@ class Throttle:
 
 # In[61]:
 
-class Config:
+class WriteConfig:
     def __init__(self, cfgFile):
         self.cfgFile = cfgFile
         pass
@@ -667,6 +667,9 @@ class Config:
     
     def save(self, obj):
         pickle.dump(obj, open(self.cfgFile, 'wb'))
+        
+class SaveHSV:
+    
 
 
 # # Init Objects & Vars
@@ -719,8 +722,15 @@ def main():
     for color in channels:
         color.createTrackBars()
     
-    # see if this fixes Joel's readFrame error
-    time.sleep(5)
+    # see if this fixes Joel's readFrame error - wait for camera to be ready
+    time.sleep(2)
+    for i in range(0, 30):
+        cap = cv2.VideoCapture(0)
+        _, frame = cap.read()
+        cv2.imshow('foo' , frame)
+    cap.release()
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
     
     # bodge for ensuring that everything initializes properly with the throttle
     myFrame.readFrame()
