@@ -668,7 +668,17 @@ class WriteConfig:
     def save(self, obj):
         pickle.dump(obj, open(self.cfgFile, 'wb'))
         
-class SaveHSV:
+#JM-------------------------------------
+class quickSaver(WriteConfig):
+    def load(self,cfgFile):
+        channels = self.load(cfgFile)
+        for color in channels:
+            color.syncTrackBars()
+        assert len(channels)==2
+        assert isinstance(channels[0],ColorHSV())
+        assert isinstance(channels[1],ColorHSV())
+        return channels
+#JM-------------------------------------
     
 
 
@@ -687,12 +697,26 @@ def main():
     myRunTime = RunTime()
     myKeyHandler = KeyHandler()
     userMessages = MsgHandler()
+    
+    #JM-------------------------------------
     channels = [ColorHSV(color0), ColorHSV(color1)]
+    quickSave = quickSaver('defaultSlot')
+    quickSave.save(channels) #Inital automatic save of the default sliders
+    quickSave.load('defaultSlot') #And then loads it. Again. Why not?
+    #JM-------------------------------------
+    
     myFrame = cvFrame(0)
     myWebSocket = WebSocket(url)
     myThrottle = Throttle()
     
     # add keys, objects, methods and help strings to the key handler
+    
+    #JM-------------------------------------
+    myKeyHandler.addKey('s',quickSave,'save(channels)','Saves a snapshot of the current slider locations')
+    channels = myKeyHandler.addKey('l',quickSave,"load('defaultSlot')",'Loads the last saved snapshot, else the default')
+    #JM-------------------------------------
+    
+    
     myKeyHandler.addKey('h', myKeyHandler, 'displayHelp', 'display this help screen')
     myKeyHandler.addKey('?', myKeyHandler, 'displayHelp', 'display this help screen')
 
