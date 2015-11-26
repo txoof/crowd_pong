@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[8]:
+# In[1]:
 
 import re
 import cv2
@@ -11,6 +11,7 @@ import numpy as np
 import copy
 import time
 import websocket
+import ConfigParser
 
 
 # # Functions
@@ -413,7 +414,10 @@ class cvFrame:
         '''enumerate the connected and readable video devices'''
         cameraList = []
         for i in range(0, 10):
-            connected, _ = cv2.VideoCapture(i).read()
+            try:
+                connected, _ = cv2.VideoCapture(i).read()
+            except Excpetion, e:
+                print 'video device', i, 'not avaialble - this is OK!'
             cv2.VideoCapture(i).release()
             if connected:
                 cameraList.append(i)
@@ -599,12 +603,7 @@ class MsgHandler:
             match = re.search(regexp, key)
             if match is not None:
                 self.delMsg(key)
-
-
-# ## Classes In Training
-
-# In[15]:
-
+                
 class Throttle:
     '''dictionary of timmer objects'''
     def __init__(self):
@@ -651,20 +650,59 @@ class Throttle:
         else:
             print 'unknown timer:', timer
             return False
-    
-    
-    
 
 
-# # testing
-# myThrottle = Throttle()
-# myThrottle.add('trackBar', .5)
-# myThrottle.add('maskCalc', .05)
-# myThrottle.add('capture', .05)
-# myThrottle.add('socket', 0)
-# myThrottle.add('display', .1)
-# 
-# myThrottle.check('mask')
+# ## Classes In Training
+
+# class Throttle:
+#     '''dictionary of timmer objects'''
+#     def __init__(self):
+#         self.timers = {}
+#     
+#     def add(self, timer, rate = 0):
+#         '''add a timer object
+#         timer - name of timer
+#         rate - frequency'''
+#         self.timers[timer] = [elapsedTime(), rate]
+#         return True
+#     
+#     def delete(self, timer):
+#         '''delete a timer object
+#         timer - name of timer to remove'''
+#         try:
+#             del self.timers[timer]
+#         except Exception, e:
+#             print 'problem deleting timer; probable key error:', e
+#         return True
+#     
+#     def adjustRate(self, timer, adjust):
+#         '''adjust timer rate
+#         adjust - amount to adjust by'''
+#         if not (isinstance(adjust, float) or isinstance(adjust, int)):
+#             print 'type error (must be int or float):', adjust
+#             return False
+#         try:
+#             self.timers[timer][1] += adjust
+#         except Exception, e:
+#             print 'problem adjusting; probable key error:', e
+#         return True
+#     
+#     def check(self, timer):
+#         '''check state of throttle entity and update if necessary'''
+#         if timer in self.timers.keys():
+#             myTimer = self.timers[timer][0]
+#             myRate = self.timers[timer][1]
+#             if myTimer.hasElapsed(myRate):
+#                 myTimer.setTime()
+#                 return True
+#             else:
+#                 return False
+#         else:
+#             print 'unknown timer:', timer
+#             return False
+#     
+#     
+#     
 
 # # Init Objects & Vars
 
@@ -674,7 +712,10 @@ def main():
     color0 = 'UP - Green' # up color
     color1 = 'DOWN - Yellow' # down color
     url = 'ws://localhost:9000/ws'
-
+        
+    #myConfig = ConfigParser.RawConfigParser()
+    #myConfig.read(config)
+    
     myRunTime = RunTime()
     myKeyHandler = KeyHandler()
     userMessages = MsgHandler()
@@ -813,16 +854,6 @@ def main():
 
 # In[ ]:
 
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
 main()
 
 
@@ -836,9 +867,28 @@ main()
 #%prun main()
 
 
-# In[ ]:
+# In[2]:
 
 #myFrame.release()
 #cv2.destroyAllWindows()
 #cv2.waitKey(1)
 
+
+# env = 'Environment'
+# channels = 'Channels'
+# config = './crowd_pong.cfg'
+# myConfig = ConfigParser.RawConfigParser()
+# myConfig.add_section(env)
+# myConfig.add_section(channels)
+# 
+# myConfig.set(env, 'URL', 'ws://localhost:9000/ws')
+# myConfig.set(channels, 'color0', 'UP - Green')
+# myConfig.set(channels, 'color1', 'DOWN - Yellow')
+# 
+# with open(config, 'wb') as configfile:
+#     myConfig.write(configfile)
+
+# myConfig = ConfigParser.RawConfigParser()
+# myConfig.read(config)
+
+# myConfig.options(channels)
