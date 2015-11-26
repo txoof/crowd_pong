@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[8]:
 
 import re
 import cv2
@@ -15,7 +15,7 @@ import websocket
 
 # # Functions
 
-# In[ ]:
+# In[9]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -60,7 +60,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[ ]:
+# In[10]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -603,7 +603,7 @@ class MsgHandler:
 
 # ## Classes In Training
 
-# In[ ]:
+# In[15]:
 
 class Throttle:
     '''dictionary of timmer objects'''
@@ -639,23 +639,36 @@ class Throttle:
         return True
     
     def check(self, timer):
-        '''check state of throttle and update if necessary'''
-        myTimer = self.timers[timer][0]
-        myRate = self.timers[timer][1]
-        if myTimer.hasElapsed(myRate):
-            myTimer.setTime()
-            return True
+        '''check state of throttle entity and update if necessary'''
+        if timer in self.timers.keys():
+            myTimer = self.timers[timer][0]
+            myRate = self.timers[timer][1]
+            if myTimer.hasElapsed(myRate):
+                myTimer.setTime()
+                return True
+            else:
+                return False
         else:
+            print 'unknown timer:', timer
             return False
-
     
     
     
 
+
+# # testing
+# myThrottle = Throttle()
+# myThrottle.add('trackBar', .5)
+# myThrottle.add('maskCalc', .05)
+# myThrottle.add('capture', .05)
+# myThrottle.add('socket', 0)
+# myThrottle.add('display', .1)
+# 
+# myThrottle.check('mask')
 
 # # Init Objects & Vars
 
-# In[ ]:
+# In[18]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -668,8 +681,8 @@ def main():
     channels = [ColorHSV(color0), ColorHSV(color1)]
     myFrame = cvFrame(0)
     myWebSocket = WebSocket(url)
-
-
+    myThrottle = Throttle()
+    
     # add keys, objects, methods and help strings to the key handler
     myKeyHandler.addKey('h', myKeyHandler, 'displayHelp', 'display this help screen')
     myKeyHandler.addKey('?', myKeyHandler, 'displayHelp', 'display this help screen')
@@ -688,34 +701,24 @@ def main():
     myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
     myKeyHandler.addKey('0', myFrame, 'resetFrameSize', 'reset frame size to default (500px)')    
     myKeyHandler.addKey('V', myFrame, 'changeVideo', 'change video device to next availalbe camera')
+        
+    # add throttle objects
+    myThrottle.add('trackBars', .5)
+    myThrottle.add('maskCalc', .05)
+    myThrottle.add('capture', .05)
+    #myThrottle.add('socket', 0) # this has < 1% CPU impact and can delay or miss messages sent to game
+    myThrottle.add('display', .05)
 
     # create trackbar windows
     for color in channels:
         color.createTrackBars()
-
-    #### TESTING #
-    ####TODO move these into the timer class and implement below
-    trackBarTimer = elapsedTime()
-    maskCalcTimer = elapsedTime()
-    captureTimer = elapsedTime()
-    socketTimer = elapsedTime()
-    displayTimer = elapsedTime()
+     
     
-    tbThrottle = .5
-    maskThrottle = .05
-    capThrottle = .05
-    socketThrottle = 0
-    displayThrottle = .1
-    
-
-    # bodge for ensuring that everything initializes properly
+    # bodge for ensuring that everything initializes properly with the throttle
     myFrame.readFrame()
     for color in channels:
         myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
         myFrame.calcResult(color.name)
-
-    # TESTING ####
-
 
     while True:
         try:
@@ -725,36 +728,28 @@ def main():
             break
 
         # read current frame
-        if captureTimer.hasElapsed(capThrottle):
+        # throttle 
+        if myThrottle.check('capture'):
             myFrame.readFrame()
-            captureTimer.setTime()
-
-        # capture frame, update track bars, calculate masks
-
 
         # split into two sepperate for loops for independent throttling
-        # sync trackbars only twice per second
-        if trackBarTimer.hasElapsed(tbThrottle):
+        if myThrottle.check('trackBars'):
+            # update trackbars
             for color in channels:
                 color.syncTrackBars()
 
-            # reset the timer
-            trackBarTimer.setTime()
-
-        # throttle mask calculation 
-        if maskCalcTimer.hasElapsed(maskThrottle):
+        # throttle mask calculation and ratio calculation
+        if myThrottle.check('maskCalc'):
+            # calculate mask and resultant frames
             for color in channels:  
                 myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
                 # only calculate resultant frames if the display is on
                 if myRunTime.displayOn:
                     myFrame.calcResult(color.name)
-
-            # reset timer
-            maskCalcTimer.setTime()
-
-        # calculate ratio of pixels in each channel
-        colorRatio = ratio(myFrame.nonZero[color0], myFrame.nonZero[color1])
-        userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)        
+            # moved into throttle check
+            # calculate ratio of pixels in each channel 
+            colorRatio = ratio(myFrame.nonZero[color0], myFrame.nonZero[color1])
+            userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)        
 
         # add message text to the frame
         msgList = []
@@ -763,15 +758,12 @@ def main():
         addText(myFrame.frame, msgList)
 
         # check web socket state
-
         if myWebSocket.isConnected:
             # send command messages to the web socket
             if len(myKeyHandler.methodReturn) > 0 and myKeyHandler.methodReturn[0] > 0:
                 myWebSocket.sendStr(myKeyHandler.methodReturn[0])
             # send color ratio to web socket
-            if socketTimer.hasElapsed(socketThrottle):
-                myWebSocket.sendStr(colorRatio)
-                socketTimer.setTime()
+            myWebSocket.sendStr(colorRatio)
             # remove websocket errors
             userMessages.delMsg('error.websocket')
         else:
@@ -780,8 +772,7 @@ def main():
             userMessages.addMsg('error.websocket', 'socket server disconnected', False)
             myRunTime.displayOn = True
                 
-          
-
+        # display runtime commands on terminal
         if len(myKeyHandler.methodReturn) > 0:
             print myKeyHandler.methodReturn
 
@@ -792,8 +783,9 @@ def main():
         for color in channels:
             channelInfo[color.name] = (color.lower, color.upper)
 
-        # update live and resultant windows
-        if displayTimer.hasElapsed(displayThrottle):
+        # throttle display output
+        if myThrottle.check('display'):
+            # update live and resultant windows
             if myRunTime.displayOn:
                 #live window
                 cv2.imshow(myFrame.name, myFrame.frame)
@@ -808,7 +800,6 @@ def main():
                     addText(myFrame.result[key], resultText)
                 # this is a bit kludgy, but it is the simplest way to join two frames together
                 cv2.imshow('Up & Down', np.concatenate((myFrame.result[color0], myFrame.result[color1]), axis = 1))
-            displayTimer.setTime()
 
     # clean up 
     # release video devices
@@ -827,7 +818,7 @@ def main():
 
 # In[ ]:
 
-dir(myThrottle)
+
 
 
 # In[ ]:
@@ -847,7 +838,7 @@ main()
 
 # In[ ]:
 
-myFrame.release()
-cv2.destroyAllWindows()
-cv2.waitKey(1)
+#myFrame.release()
+#cv2.destroyAllWindows()
+#cv2.waitKey(1)
 
