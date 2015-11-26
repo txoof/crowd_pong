@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[1]:
+# In[23]:
 
 import re
 import cv2
@@ -12,11 +12,12 @@ import copy
 import time
 import websocket
 import ConfigParser
+import pickle
 
 
 # # Functions
 
-# In[9]:
+# In[24]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -61,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[10]:
+# In[25]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -654,55 +655,45 @@ class Throttle:
 
 # ## Classes In Training
 
-# class Throttle:
-#     '''dictionary of timmer objects'''
-#     def __init__(self):
-#         self.timers = {}
-#     
-#     def add(self, timer, rate = 0):
-#         '''add a timer object
-#         timer - name of timer
-#         rate - frequency'''
-#         self.timers[timer] = [elapsedTime(), rate]
-#         return True
-#     
-#     def delete(self, timer):
-#         '''delete a timer object
-#         timer - name of timer to remove'''
-#         try:
-#             del self.timers[timer]
-#         except Exception, e:
-#             print 'problem deleting timer; probable key error:', e
-#         return True
-#     
-#     def adjustRate(self, timer, adjust):
-#         '''adjust timer rate
-#         adjust - amount to adjust by'''
-#         if not (isinstance(adjust, float) or isinstance(adjust, int)):
-#             print 'type error (must be int or float):', adjust
-#             return False
-#         try:
-#             self.timers[timer][1] += adjust
-#         except Exception, e:
-#             print 'problem adjusting; probable key error:', e
-#         return True
-#     
-#     def check(self, timer):
-#         '''check state of throttle entity and update if necessary'''
-#         if timer in self.timers.keys():
-#             myTimer = self.timers[timer][0]
-#             myRate = self.timers[timer][1]
-#             if myTimer.hasElapsed(myRate):
-#                 myTimer.setTime()
-#                 return True
-#             else:
-#                 return False
-#         else:
-#             print 'unknown timer:', timer
-#             return False
-#     
-#     
-#     
+# In[61]:
+
+class Config:
+    def __init__(self, cfgFile):
+        self.cfgFile = cfgFile
+        pass
+    
+    def load(self, cfgFile):
+        return pickle.load(open(self.cfgFile, 'rb'))
+    
+    def save(self, obj):
+        pickle.dump(obj, open(self.cfgFile, 'wb'))
+
+
+# In[66]:
+
+fooHSV = ColorHSV()
+fooHSV.lower = fooHSV.setHSVvalues([99, 99, 99])
+myConfig = Config('./fooHSV')
+foo = {}
+foo['a'] = 7
+foo['b'] = (3, 7, 'abcdefg')
+print foo
+
+
+# In[67]:
+
+myConfig.save(fooHSV)
+
+
+# In[68]:
+
+bar = myConfig.load('./fooHSV')
+
+
+# In[71]:
+
+print bar.midBGRcolor()
+
 
 # # Init Objects & Vars
 
