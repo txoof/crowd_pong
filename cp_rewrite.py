@@ -718,7 +718,9 @@ def main():
     # create trackbar windows
     for color in channels:
         color.createTrackBars()
-     
+    
+    # see if this fixes Joel's readFrame error
+    time.sleep(5)
     
     # bodge for ensuring that everything initializes properly with the throttle
     myFrame.readFrame()
