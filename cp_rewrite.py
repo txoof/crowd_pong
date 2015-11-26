@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[8]:
+# In[ ]:
 
 import re
 import cv2
@@ -15,7 +15,7 @@ import websocket
 
 # # Functions
 
-# In[9]:
+# In[ ]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -60,7 +60,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[10]:
+# In[ ]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -560,18 +560,8 @@ class WebSocket:
             print 'error sending to socket:', e
             print ' is the websocket server running at', self.url + '?'
             self.isConnected = False       
-    
 
-
-# In[ ]:
-
-
-
-
-# ## Classes In Training
-
-# In[11]:
-
+            
 class MsgHandler:
     '''display messages in open CVframe'''
     def __init__(self):
@@ -609,6 +599,58 @@ class MsgHandler:
             match = re.search(regexp, key)
             if match is not None:
                 self.delMsg(key)
+
+
+# ## Classes In Training
+
+# In[ ]:
+
+class Throttle:
+    '''dictionary of timmer objects'''
+    def __init__(self):
+        self.timers = {}
+    
+    def add(self, timer, rate = 0):
+        '''add a timer object
+        timer - name of timer
+        rate - frequency'''
+        self.timers[timer] = [elapsedTime(), rate]
+        return True
+    
+    def delete(self, timer):
+        '''delete a timer object
+        timer - name of timer to remove'''
+        try:
+            del self.timers[timer]
+        except Exception, e:
+            print 'problem deleting timer; probable key error:', e
+        return True
+    
+    def adjustRate(self, timer, adjust):
+        '''adjust timer rate
+        adjust - amount to adjust by'''
+        if not (isinstance(adjust, float) or isinstance(adjust, int)):
+            print 'type error (must be int or float):', adjust
+            return False
+        try:
+            self.timers[timer][1] += adjust
+        except Exception, e:
+            print 'problem adjusting; probable key error:', e
+        return True
+    
+    def check(self, timer):
+        '''check state of throttle and update if necessary'''
+        myTimer = self.timers[timer][0]
+        myRate = self.timers[timer][1]
+        if myTimer.hasElapsed(myRate):
+            myTimer.setTime()
+            return True
+        else:
+            return False
+
+    
+    
+    
 
 
 # # Init Objects & Vars
@@ -652,6 +694,7 @@ def main():
         color.createTrackBars()
 
     #### TESTING #
+    ####TODO move these into the timer class and implement below
     trackBarTimer = elapsedTime()
     maskCalcTimer = elapsedTime()
     captureTimer = elapsedTime()
@@ -784,20 +827,25 @@ def main():
 
 # In[ ]:
 
+dir(myThrottle)
+
+
+# In[ ]:
+
 main()
 
 
-# In[18]:
+# In[ ]:
 
 #myFrame.cap.release()
 
 
-# In[17]:
+# In[ ]:
 
 #%prun main()
 
 
-# In[14]:
+# In[ ]:
 
 myFrame.release()
 cv2.destroyAllWindows()
