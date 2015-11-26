@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[8]:
 
 import re
 import cv2
@@ -15,7 +15,7 @@ import websocket
 
 # # Functions
 
-# In[ ]:
+# In[9]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -60,7 +60,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[ ]:
+# In[10]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -327,8 +327,11 @@ class ColorHSV:
         if self.colorRange != oldHSV.colorRange:
             # use the new color range setting to update the hue values
             self.setRangeDefault()
-            cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
-            cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
+            cv2.setTrackbarPos(self.sliderHue[0], self.controlWinName, self.defaultRanges[self.colorRange][0])
+            cv2.setTrackbarPos(self.sliderHue[1], self.controlWinName, self.defaultRanges[self.colorRange][1])
+            
+            #cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
+            #cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
             self.updateControlWindow()
                 
         # look for changes in the Hue sliders and update the color pallet as needed
@@ -560,9 +563,14 @@ class WebSocket:
     
 
 
+# In[ ]:
+
+
+
+
 # ## Classes In Training
 
-# In[ ]:
+# In[11]:
 
 class MsgHandler:
     '''display messages in open CVframe'''
@@ -607,122 +615,189 @@ class MsgHandler:
 
 # In[ ]:
 
-color0 = 'UP - Green' # up color
-color1 = 'DOWN - Yellow' # down color
-url = 'ws://localhost:9000/ws'
+def main():
+    color0 = 'UP - Green' # up color
+    color1 = 'DOWN - Yellow' # down color
+    url = 'ws://localhost:9000/ws'
 
-myRunTime = RunTime()
-myKeyHandler = KeyHandler()
-userMessages = MsgHandler()
-channels = [ColorHSV(color0), ColorHSV(color1)]
-myFrame = cvFrame(0)
-myWebSocket = WebSocket(url)
-
-
-# add keys, objects, methods and help strings to the key handler
-myKeyHandler.addKey('h', myKeyHandler, 'displayHelp', 'display this help screen')
-myKeyHandler.addKey('?', myKeyHandler, 'displayHelp', 'display this help screen')
-
-myKeyHandler.addKey('Q', myRunTime, 'quit', 'stop execution')
-myKeyHandler.addKey('p', myRunTime, 'pause', 'pause live display')
-myKeyHandler.addKey('u', myRunTime, 'unpause', 'unpause live display')
-myKeyHandler.addKey('P', myRunTime, 'pauseGame', 'pause game')
-myKeyHandler.addKey('R', myRunTime, 'restart', 'restart game')    
-myKeyHandler.addKey('O', myRunTime, 'doOver', 'restart point')
-myKeyHandler.addKey('C', myRunTime, 'calibration', 'return to calibration screen')
-myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
+    myRunTime = RunTime()
+    myKeyHandler = KeyHandler()
+    userMessages = MsgHandler()
+    channels = [ColorHSV(color0), ColorHSV(color1)]
+    myFrame = cvFrame(0)
+    myWebSocket = WebSocket(url)
 
 
-myKeyHandler.addKey('-', myFrame, 'decreaseFrameSize', 'decrease frame size')
-myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
-myKeyHandler.addKey('0', myFrame, 'resetFrameSize', 'reset frame size to default (500px)')    
-myKeyHandler.addKey('V', myFrame, 'changeVideo', 'change video device to next availalbe camera')
+    # add keys, objects, methods and help strings to the key handler
+    myKeyHandler.addKey('h', myKeyHandler, 'displayHelp', 'display this help screen')
+    myKeyHandler.addKey('?', myKeyHandler, 'displayHelp', 'display this help screen')
 
-# create trackbar windows
-for color in channels:
-    color.createTrackBars()
+    myKeyHandler.addKey('Q', myRunTime, 'quit', 'stop execution')
+    myKeyHandler.addKey('p', myRunTime, 'pause', 'pause live display')
+    myKeyHandler.addKey('u', myRunTime, 'unpause', 'unpause live display')
+    myKeyHandler.addKey('P', myRunTime, 'pauseGame', 'pause game')
+    myKeyHandler.addKey('R', myRunTime, 'restart', 'restart game')    
+    myKeyHandler.addKey('O', myRunTime, 'doOver', 'restart point')
+    myKeyHandler.addKey('C', myRunTime, 'calibration', 'return to calibration screen')
+    myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
 
-# return value from key functions
-while True:
-    try:
-        # get key input every cycle and it's response
-        myKeyHandler.handleKey(cv2.waitKey(1))
-    except LoopHalt:
-        break
-        
-    # read current frame
+
+    myKeyHandler.addKey('-', myFrame, 'decreaseFrameSize', 'decrease frame size')
+    myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
+    myKeyHandler.addKey('0', myFrame, 'resetFrameSize', 'reset frame size to default (500px)')    
+    myKeyHandler.addKey('V', myFrame, 'changeVideo', 'change video device to next availalbe camera')
+
+    # create trackbar windows
+    for color in channels:
+        color.createTrackBars()
+
+    #### TESTING #
+    trackBarTimer = elapsedTime()
+    maskCalcTimer = elapsedTime()
+    captureTimer = elapsedTime()
+    socketTimer = elapsedTime()
+    displayTimer = elapsedTime()
+    
+    tbThrottle = .5
+    maskThrottle = .05
+    capThrottle = .05
+    socketThrottle = 0
+    displayThrottle = .1
+    
+
+    # bodge for ensuring that everything initializes properly
     myFrame.readFrame()
-
-    # capture frame, update track bars, calculate masks
     for color in channels:
-        color.syncTrackBars()
         myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
-        # only calculate resultant frames if the display is on
-        if myRunTime.displayOn:
-            myFrame.calcResult(color.name)
+        myFrame.calcResult(color.name)
 
-    # calculate ratio of pixels in each channel
-    colorRatio = ratio(myFrame.nonZero[color0], myFrame.nonZero[color1])
-    userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)        
-    
-    # add message text to the frame
-    msgList = []
-    for key in userMessages.msgList:
-        msgList.append(userMessages.msgList[key])
-    addText(myFrame.frame, msgList)
-    
-    # check web socket state
-    if myWebSocket.isConnected:
-        # send command messages to the web socket
-        if len(myKeyHandler.methodReturn) > 0 and myKeyHandler.methodReturn[0] > 0:
-            myWebSocket.sendStr(myKeyHandler.methodReturn[0])
-        # send color ratio to web socket
-        myWebSocket.sendStr(colorRatio)
-        # remove websocket errors
-        userMessages.delMsg('error.websocket')
-    else:
-        myWebSocket.reconnect(3)
-        # add an error message to the list and unpause the display
-        userMessages.addMsg('error.websocket', 'socket server disconnected', False)
-        myRunTime.displayOn = True
-    
-    if len(myKeyHandler.methodReturn) > 0:
-        print myKeyHandler.methodReturn
+    # TESTING ####
 
 
-    ####FIXME bodge for adding upper and lower text to each frame
-    channelInfo ={}
-    # get the color channel names and values and store in dictionary
-    for color in channels:
-        channelInfo[color.name] = (color.lower, color.upper)
-    
-    # update live and resultant windows
-    if myRunTime.displayOn:
-        #live window
-        cv2.imshow(myFrame.name, myFrame.frame)
-        
-        for key in myFrame.result:
-            # bodge for adding text for testing
-            resultText = []
-            resultText.append('NonZero Px: ' + str(myFrame.nonZero[key]) )
-            resultText.append('L: ' + str(channelInfo[key][0]))
-            resultText.append('U: ' + str(channelInfo[key][1]))
-            #addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
-            addText(myFrame.result[key], resultText)
-        # this is a bit kludgy, but it is the simplest way to join two frames together
-        cv2.imshow('Up & Down', np.concatenate((myFrame.result[color0], myFrame.result[color1]), axis = 1))
+    while True:
+        try:
+            # get key input every cycle and it's response
+            myKeyHandler.handleKey(cv2.waitKey(1))
+        except LoopHalt:
+            break
 
-# clean up 
-# release video devices
-myFrame.release()
-# clean up windows
-cv2.destroyAllWindows()
-cv2.waitKey(1)
-# close websocket
-myWebSocket.disconnect()
+        # read current frame
+        if captureTimer.hasElapsed(capThrottle):
+            myFrame.readFrame()
+            captureTimer.setTime()
+
+        # capture frame, update track bars, calculate masks
+
+
+        # split into two sepperate for loops for independent throttling
+        # sync trackbars only twice per second
+        if trackBarTimer.hasElapsed(tbThrottle):
+            for color in channels:
+                color.syncTrackBars()
+
+            # reset the timer
+            trackBarTimer.setTime()
+
+        # throttle mask calculation 
+        if maskCalcTimer.hasElapsed(maskThrottle):
+            for color in channels:  
+                myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
+                # only calculate resultant frames if the display is on
+                if myRunTime.displayOn:
+                    myFrame.calcResult(color.name)
+
+            # reset timer
+            maskCalcTimer.setTime()
+
+        # calculate ratio of pixels in each channel
+        colorRatio = ratio(myFrame.nonZero[color0], myFrame.nonZero[color1])
+        userMessages.addMsg('ratio', 'ratio: ' + str(colorRatio), False)        
+
+        # add message text to the frame
+        msgList = []
+        for key in userMessages.msgList:
+            msgList.append(userMessages.msgList[key])
+        addText(myFrame.frame, msgList)
+
+        # check web socket state
+
+        if myWebSocket.isConnected:
+            # send command messages to the web socket
+            if len(myKeyHandler.methodReturn) > 0 and myKeyHandler.methodReturn[0] > 0:
+                myWebSocket.sendStr(myKeyHandler.methodReturn[0])
+            # send color ratio to web socket
+            if socketTimer.hasElapsed(socketThrottle):
+                myWebSocket.sendStr(colorRatio)
+                socketTimer.setTime()
+            # remove websocket errors
+            userMessages.delMsg('error.websocket')
+        else:
+            myWebSocket.reconnect(3)
+            # add an error message to the list and unpause the display
+            userMessages.addMsg('error.websocket', 'socket server disconnected', False)
+            myRunTime.displayOn = True
+                
+          
+
+        if len(myKeyHandler.methodReturn) > 0:
+            print myKeyHandler.methodReturn
+
+
+        ####FIXME bodge for adding upper and lower text to each frame
+        channelInfo ={}
+        # get the color channel names and values and store in dictionary
+        for color in channels:
+            channelInfo[color.name] = (color.lower, color.upper)
+
+        # update live and resultant windows
+        if displayTimer.hasElapsed(displayThrottle):
+            if myRunTime.displayOn:
+                #live window
+                cv2.imshow(myFrame.name, myFrame.frame)
+
+                for key in myFrame.result:
+                    # bodge for adding text for testing
+                    resultText = []
+                    resultText.append('NonZero Px: ' + str(myFrame.nonZero[key]) )
+                    resultText.append('L: ' + str(channelInfo[key][0]))
+                    resultText.append('U: ' + str(channelInfo[key][1]))
+                    #addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
+                    addText(myFrame.result[key], resultText)
+                # this is a bit kludgy, but it is the simplest way to join two frames together
+                cv2.imshow('Up & Down', np.concatenate((myFrame.result[color0], myFrame.result[color1]), axis = 1))
+            displayTimer.setTime()
+
+    # clean up 
+    # release video devices
+    myFrame.release()
+    # clean up windows
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    # close websocket
+    myWebSocket.disconnect()
 
 
 # In[ ]:
+
+
+
+
+# In[ ]:
+
+main()
+
+
+# In[18]:
+
+#myFrame.cap.release()
+
+
+# In[17]:
+
+#%prun main()
+
+
+# In[14]:
 
 myFrame.release()
 cv2.destroyAllWindows()
