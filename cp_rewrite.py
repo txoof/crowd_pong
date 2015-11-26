@@ -669,32 +669,6 @@ class Config:
         pickle.dump(obj, open(self.cfgFile, 'wb'))
 
 
-# In[66]:
-
-fooHSV = ColorHSV()
-fooHSV.lower = fooHSV.setHSVvalues([99, 99, 99])
-myConfig = Config('./fooHSV')
-foo = {}
-foo['a'] = 7
-foo['b'] = (3, 7, 'abcdefg')
-print foo
-
-
-# In[67]:
-
-myConfig.save(fooHSV)
-
-
-# In[68]:
-
-bar = myConfig.load('./fooHSV')
-
-
-# In[71]:
-
-print bar.midBGRcolor()
-
-
 # # Init Objects & Vars
 
 # In[18]:
