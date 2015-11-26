@@ -1,12 +1,13 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[7]:
 
 import cv2
+import numpy
 
 
-# In[6]:
+# In[8]:
 
 def checkCams():
     '''enumerate the connected and readable video devices'''
