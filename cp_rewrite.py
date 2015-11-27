@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[23]:
+# In[1]:
 
 import re
 import cv2
@@ -17,7 +17,7 @@ import pickle
 
 # # Functions
 
-# In[24]:
+# In[2]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[25]:
+# In[149]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -171,7 +171,7 @@ class KeyHandler:
             # set to empty if no key or an unknown key was pressed
             self.methodReturn = []
         # set to empty if None was returned    
-        if self.methodReturn is None:
+        if not isinstance(self.methodReturn, list):
                 self.methodReturn = []
 
             
@@ -606,6 +606,7 @@ class MsgHandler:
                 self.delMsg(key)
                 
 class Throttle:
+    #### TODO add increment as an optional item to work with the adjust method or increment method
     '''dictionary of timmer objects'''
     def __init__(self):
         self.timers = {}
@@ -655,31 +656,88 @@ class Throttle:
 
 # ## Classes In Training
 
-# In[61]:
+# In[150]:
 
-class WriteConfig:
-    def __init__(self, cfgFile):
-        self.cfgFile = cfgFile
-        pass
+class PickleObj:
+    '''Write an object to disk using pickle'''
     
-    def load(self, cfgFile):
-        return pickle.load(open(self.cfgFile, 'rb'))
+    def load(self, pickleFile):
+        '''pickleFile - full path to file containing pickled object
+            returns: unpickled object'''
+        return pickle.load(open(pickleFile, 'rb'))
     
-    def save(self, obj):
-        pickle.dump(obj, open(self.cfgFile, 'wb'))
+    def save(self, obj, pickleFile):
+        '''obj - object to be pickled'''
+        pickle.dump(obj, open(pickleFile, 'wb'))
         
-class SaveHSV:
+class ChannelSaverxxx(PickleObj):
+    def __init__(self, channels, pickleFile):
+        self.channels = channels
+        self.pickleFile = pickleFile
+        self.cfgFile = self.pickleFile
+        
+    def loadChannels(self):
+        self.channels = self.load(self.pickleFile)
+        #assert len(self.channels) == 2
+        #for color in self.channels:
+        #    assert isinstance(self.channels[color], ColorHSV())
+        return self.channels
     
+    def saveChannels(self):
+        self.channels = self.save(self.channels)
+        pass
+
+class ChannelSaver(PickleObj):
+    def __init__(self, chan, pFile):
+        self.channel = chan
+        self.pFile = pFile
+        self.hasLoaded = False
+        self.hasSaved = False
+        
+    def cSave(self):
+        self.save(self.channel, self.pFile)
+        self.hasSaved = True
+        return True
+        
+    def cLoad(self):
+        self.channels = self.load(self.pFile)
+        self.hasLoaded = True
+        #return self.channels
+    
+    
+
+
+# myChan = [ColorHSV('myUP'), ColorHSV('myDown')]
+# myChan[0].lower = myChan[0].setHSVvalues((5, 5, 5))
+# print myChan[0].lower
+# pf = './myPickle.pick'
+
+# mySaver = ChannelSaver(myChan, pf)
+
+# mySaver.cSave()
+
+# mySaver.cLoad()
+# print mySaver.channels[0].lower
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # # Init Objects & Vars
 
-# In[18]:
+# In[151]:
 
 def main():
     color0 = 'UP - Green' # up color
     color1 = 'DOWN - Yellow' # down color
     url = 'ws://localhost:9000/ws'
+    chanPickleFile = './channels.pick'
         
     #myConfig = ConfigParser.RawConfigParser()
     #myConfig.read(config)
@@ -691,6 +749,8 @@ def main():
     myFrame = cvFrame(0)
     myWebSocket = WebSocket(url)
     myThrottle = Throttle()
+    
+    myChannelSaver = ChannelSaver(channels, chanPickleFile)
     
     # add keys, objects, methods and help strings to the key handler
     myKeyHandler.addKey('h', myKeyHandler, 'displayHelp', 'display this help screen')
@@ -705,6 +765,9 @@ def main():
     myKeyHandler.addKey('C', myRunTime, 'calibration', 'return to calibration screen')
     myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
 
+    
+    myKeyHandler.addKey('l', myChannelSaver, 'cLoad', 'load channels pickle')
+    myKeyHandler.addKey('s', myChannelSaver, 'cSave', 'save channels pickle')
 
     myKeyHandler.addKey('-', myFrame, 'decreaseFrameSize', 'decrease frame size')
     myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
@@ -717,27 +780,33 @@ def main():
     myThrottle.add('capture', .05)
     #myThrottle.add('socket', 0) # this has < 1% CPU impact and can delay or miss messages sent to game
     myThrottle.add('display', .05)
-
-    # create trackbar windows
-    for color in channels:
-        color.createTrackBars()
-    
-    # see if this fixes Joel's readFrame error - wait for camera to be ready
-    time.sleep(2)
+  
+    # bodge for initing camera
     for i in range(0, 30):
         cap = cv2.VideoCapture(0)
         _, frame = cap.read()
-        cv2.imshow('foo' , frame)
+        cv2.imshow('init' , frame)
     cap.release()
-    cv2.destroyAllWindows()
-    cv2.waitKey(1)
-    
+    cv2.destroyWindow('init')
+    #cv2.destroyAllWindows()
+    #cv2.waitKey(1)
+  
+    # create trackbar windows
+    for color in channels:
+        color.createTrackBars()
+
     # bodge for ensuring that everything initializes properly with the throttle
+    # read one frame
     myFrame.readFrame()
     for color in channels:
+        # make mask and resultant calculations at least once
         myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
         myFrame.calcResult(color.name)
 
+        
+        
+        
+    # main loop
     while True:
         try:
             # get key input every cycle and it's response
@@ -756,6 +825,15 @@ def main():
             for color in channels:
                 color.syncTrackBars()
 
+                
+        ####FIXME this checks for an update to the channel saver EVERY loop 
+        if myChannelSaver.hasLoaded:
+            channels = myChannelSaver.channels
+            myChannelSaver.hasLoaded = False
+            ######FIXME need to move the trackbars otherwise sync will reset values to 
+            # current values of trackbars. 
+            # need to make a method that moves the trackbars
+                
         # throttle mask calculation and ratio calculation
         if myThrottle.check('maskCalc'):
             # calculate mask and resultant frames
@@ -829,7 +907,7 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[ ]:
+# In[152]:
 
 main()
 
@@ -844,11 +922,36 @@ main()
 #%prun main()
 
 
-# In[2]:
+# In[141]:
 
 #myFrame.release()
-#cv2.destroyAllWindows()
-#cv2.waitKey(1)
+cv2.destroyAllWindows()
+cv2.waitKey(1)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
 
 # env = 'Environment'
