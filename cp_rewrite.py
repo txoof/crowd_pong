@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[1]:
+# In[ ]:
 
 import re
 import cv2
@@ -17,7 +17,7 @@ import pickle
 
 # # Functions
 
-# In[2]:
+# In[ ]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[149]:
+# In[ ]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -301,6 +301,13 @@ class ColorHSV:
         # add a color swatch to the control window
         self.updateControlWindow()
         
+    def updateTrackBars(self, winName, barDict):
+        if isinstance(barDict, dict):
+            for key in barDict:
+                cv2.setTrackbarPos(key, winName, barDict[key])
+        else:
+            pass
+        
         
     
     def syncTrackBars(self):
@@ -310,7 +317,6 @@ class ColorHSV:
         oldHSV = copy.deepcopy(self)
         #hue
         self.lower[0] = cv2.getTrackbarPos(self.sliderHue[0], self.controlWinName)
-
         self.upper[0] = cv2.getTrackbarPos(self.sliderHue[1],self.controlWinName)
 
         #saturation
@@ -329,8 +335,11 @@ class ColorHSV:
         if self.colorRange != oldHSV.colorRange:
             # use the new color range setting to update the hue values
             self.setRangeDefault()
-            cv2.setTrackbarPos(self.sliderHue[0], self.controlWinName, self.defaultRanges[self.colorRange][0])
-            cv2.setTrackbarPos(self.sliderHue[1], self.controlWinName, self.defaultRanges[self.colorRange][1])
+            trackBarSettings = {self.sliderHue[0]: self.defaultRanges[self.colorRange][0],
+                               self.sliderHue[1]: self.defaultRanges[self.colorRange][1]}
+            self.updateTrackBars(self.controlWinName, trackBarSettings)
+            #cv2.setTrackbarPos(self.sliderHue[0], self.controlWinName, self.defaultRanges[self.colorRange][0])
+            #cv2.setTrackbarPos(self.sliderHue[1], self.controlWinName, self.defaultRanges[self.colorRange][1])
             
             #cv2.setTrackbarPos(color.sliderHue[0], color.controlWinName, color.defaultRanges[color.colorRange][0])
             #cv2.setTrackbarPos(color.sliderHue[1], color.controlWinName, color.defaultRanges[color.colorRange][1])
@@ -656,7 +665,7 @@ class Throttle:
 
 # ## Classes In Training
 
-# In[150]:
+# In[ ]:
 
 class PickleObj:
     '''Write an object to disk using pickle'''
@@ -731,7 +740,7 @@ class ChannelSaver(PickleObj):
 
 # # Init Objects & Vars
 
-# In[151]:
+# In[ ]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -829,6 +838,14 @@ def main():
         ####FIXME this checks for an update to the channel saver EVERY loop 
         if myChannelSaver.hasLoaded:
             channels = myChannelSaver.channels
+            for color in channels:
+                settingsDict = {color.sliderHue[0]: color.lower[0],
+                                color.sliderHue[1]: color.upper[0],
+                                color.sliderSat[0]: color.lower[1],
+                                color.sliderVal[0]: color.lower[2],
+                                color.sliderVal[1]: color.upper[2]
+                                }
+                color.updateTrackBars(color.controlWinName, settingsDict)
             myChannelSaver.hasLoaded = False
             ######FIXME need to move the trackbars otherwise sync will reset values to 
             # current values of trackbars. 
@@ -907,7 +924,7 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[152]:
+# In[ ]:
 
 main()
 
@@ -922,31 +939,11 @@ main()
 #%prun main()
 
 
-# In[141]:
+# In[ ]:
 
 #myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
 
 
 # In[ ]:
