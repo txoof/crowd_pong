@@ -246,6 +246,11 @@ class cvFrame:
         joinedResultImg - concantination of all resultant frames along axis 1
         '''
         self.cap = cv2.VideoCapture(videoDev)
+	#Set Camera options Witdh, Height, FPS
+	#TODO, make vars!
+	self.cap.set(3, 1280)
+	self.cap.set(4, 720)
+	self.cap.set(5, 60)
         #_, self.frame = self.cap.read()
         self.frame = self.readFrame()
         self.hsvFrame = self.cvtHSV()
