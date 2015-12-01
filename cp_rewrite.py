@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[3]:
 
 import re
 import cv2
@@ -11,13 +11,13 @@ import numpy as np
 import copy
 import time
 import websocket
-import ConfigParser
 import pickle
+import ConfigParser
 
 
 # # Functions
 
-# In[ ]:
+# In[4]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[ ]:
+# In[11]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -305,6 +305,10 @@ class ColorHSV:
         if isinstance(barDict, dict):
             for key in barDict:
                 cv2.setTrackbarPos(key, winName, barDict[key])
+            #### Testing #
+            self.syncTrackBars()
+            self.updateControlWindow()
+            # Testing ####
         else:
             pass
         
@@ -363,7 +367,8 @@ class ColorHSV:
         else:
             self.text.clear()
             self.text.addLine('Aproximate mid color in hue range')
-            self.text.addLine('Color range: ' + self.defaultRanges[self.colorRange][2])
+            self.text.addLine('lower: ' + str(self.lower))
+            self.text.addLine('upper: ' + str(self.upper))
             self.text.addLine(self.name)
         # add the text to the img
         img = addText(img, self.text.strList)
@@ -663,10 +668,6 @@ class Throttle:
             return False
 
 
-# ## Classes In Training
-
-# In[ ]:
-
 class PickleObj:
     '''Write an object to disk using pickle'''
     
@@ -697,50 +698,80 @@ class ChannelSaverxxx(PickleObj):
         pass
 
 class ChannelSaver(PickleObj):
-    def __init__(self, chan, pFile):
-        self.channel = chan
+    def __init__(self, channels, pFile):
+        self.channels = channels
         self.pFile = pFile
         self.hasLoaded = False
         self.hasSaved = False
         
     def cSave(self):
-        self.save(self.channel, self.pFile)
+        self.save(self.channels, self.pFile)
         self.hasSaved = True
+   
         return True
         
     def cLoad(self):
         self.channels = self.load(self.pFile)
         self.hasLoaded = True
+        
         #return self.channels
     
     
 
 
-# myChan = [ColorHSV('myUP'), ColorHSV('myDown')]
-# myChan[0].lower = myChan[0].setHSVvalues((5, 5, 5))
-# print myChan[0].lower
-# pf = './myPickle.pick'
+# ## Classes In Training
 
-# mySaver = ChannelSaver(myChan, pf)
-
-# mySaver.cSave()
-
-# mySaver.cLoad()
-# print mySaver.channels[0].lower
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
+# class PickleObj:
+#     '''Write an object to disk using pickle'''
+#     
+#     def load(self, pickleFile):
+#         '''pickleFile - full path to file containing pickled object
+#             returns: unpickled object'''
+#         return pickle.load(open(pickleFile, 'rb'))
+#     
+#     def save(self, obj, pickleFile):
+#         '''obj - object to be pickled'''
+#         pickle.dump(obj, open(pickleFile, 'wb'))
+#         
+# class ChannelSaverxxx(PickleObj):
+#     def __init__(self, channels, pickleFile):
+#         self.channels = channels
+#         self.pickleFile = pickleFile
+#         self.cfgFile = self.pickleFile
+#         
+#     def loadChannels(self):
+#         self.channels = self.load(self.pickleFile)
+#         #assert len(self.channels) == 2
+#         #for color in self.channels:
+#         #    assert isinstance(self.channels[color], ColorHSV())
+#         return self.channels
+#     
+#     def saveChannels(self):
+#         self.channels = self.save(self.channels)
+#         pass
+# 
+# class ChannelSaver(PickleObj):
+#     def __init__(self, chan, pFile):
+#         self.channel = chan
+#         self.pFile = pFile
+#         self.hasLoaded = False
+#         self.hasSaved = False
+#         
+#     def cSave(self):
+#         self.save(self.channel, self.pFile)
+#         self.hasSaved = True
+#         return True
+#         
+#     def cLoad(self):
+#         self.channels = self.load(self.pFile)
+#         self.hasLoaded = True
+#         #return self.channels
+#     
+#     
 
 # # Init Objects & Vars
 
-# In[ ]:
+# In[7]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -833,7 +864,6 @@ def main():
             # update trackbars
             for color in channels:
                 color.syncTrackBars()
-
                 
         ####FIXME this checks for an update to the channel saver EVERY loop 
         if myChannelSaver.hasLoaded:
@@ -843,7 +873,9 @@ def main():
                                 color.sliderHue[1]: color.upper[0],
                                 color.sliderSat[0]: color.lower[1],
                                 color.sliderVal[0]: color.lower[2],
-                                color.sliderVal[1]: color.upper[2]
+                                color.sliderVal[1]: color.upper[2],
+                                color.sliderColRange[0]: color.colorRange
+    
                                 }
                 color.updateTrackBars(color.controlWinName, settingsDict)
             myChannelSaver.hasLoaded = False
@@ -907,8 +939,8 @@ def main():
                     # bodge for adding text for testing
                     resultText = []
                     resultText.append('NonZero Px: ' + str(myFrame.nonZero[key]) )
-                    resultText.append('L: ' + str(channelInfo[key][0]))
-                    resultText.append('U: ' + str(channelInfo[key][1]))
+                    #resultText.append('L: ' + str(channelInfo[key][0]))
+                    #resultText.append('U: ' + str(channelInfo[key][1]))
                     #addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
                     addText(myFrame.result[key], resultText)
                 # this is a bit kludgy, but it is the simplest way to join two frames together
@@ -924,7 +956,7 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[ ]:
+# In[8]:
 
 main()
 
@@ -944,6 +976,12 @@ main()
 #myFrame.release()
 cv2.destroyAllWindows()
 cv2.waitKey(1)
+
+
+# In[1]:
+
+env = 'Environment'
+myConfig = ConfigParser.RawConfigParser()
 
 
 # In[ ]:
