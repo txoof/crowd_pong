@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[ ]:
+# In[2]:
 
 import re
 import cv2
@@ -17,7 +17,7 @@ import ConfigParser
 
 # # Functions
 
-# In[ ]:
+# In[3]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[1]:
+# In[12]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -156,12 +156,10 @@ class KeyHandler:
         print '='*20
         itemList = []
 
+        # make a list that can be sorted of all the help terms
         for key, (_, _, description) in self.keyMap.items():
             itemList.append(key)
-            
-        print itemList
         itemList.sort()
-        print itemList
         for key in itemList:
             print key, '   =   ', self.keyMap[key][2]
         
@@ -183,8 +181,8 @@ class KeyHandler:
         else:
             # set to empty if no key or an unknown key was pressed
             self.methodReturn = []
-        # set to empty if None was returned    
-        if not isinstance(self.methodReturn, list):
+        # set to empty if None was returned  
+        if not isinstance(self.methodReturn, tuple):
                 self.methodReturn = []
 
             
@@ -736,7 +734,7 @@ class ChannelSaver(PickleObj):
 
 # # Init Objects & Vars
 
-# In[ ]:
+# In[10]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -886,7 +884,6 @@ def main():
         if len(myKeyHandler.methodReturn) > 0:
             print myKeyHandler.methodReturn
 
-
         ####FIXME bodge for adding upper and lower text to each frame
         channelInfo ={}
         # get the color channel names and values and store in dictionary
@@ -921,12 +918,12 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[ ]:
+# In[11]:
 
 main()
 
 
-# In[ ]:
+# In[7]:
 
 #myFrame.release()
 cv2.destroyAllWindows()
@@ -935,50 +932,10 @@ cv2.waitKey(1)
 
 # In[ ]:
 
-env = 'Environment'
-myConfig = ConfigParser.RawConfigParser()
 
 
-# In[9]:
 
-foo = {}
-foo['b']= ('Z', dir(foo), 2*2)
-foo['c'] = ('5')
-for keys in foo:
-    print keys
+# In[ ]:
 
 
-# In[11]:
 
-foo.keys()
-
-
-# In[17]:
-
-itemList = ['C', '0', 'D', 'p', 'h', '-', 'L', 'O', 'Q', 'P', 'S', 'R', 'u', 'V', '=', '?']
-
-
-# In[18]:
-
-itemList.sort()
-print itemList
-
-
-# env = 'Environment'
-# channels = 'Channels'
-# config = './crowd_pong.cfg'
-# myConfig = ConfigParser.RawConfigParser()
-# myConfig.add_section(env)
-# myConfig.add_section(channels)
-# 
-# myConfig.set(env, 'URL', 'ws://localhost:9000/ws')
-# myConfig.set(channels, 'color0', 'UP - Green')
-# myConfig.set(channels, 'color1', 'DOWN - Yellow')
-# 
-# with open(config, 'wb') as configfile:
-#     myConfig.write(configfile)
-
-# myConfig = ConfigParser.RawConfigParser()
-# myConfig.read(config)
-
-# myConfig.options(channels)
