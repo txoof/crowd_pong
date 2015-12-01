@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[3]:
+# In[ ]:
 
 import re
 import cv2
@@ -17,7 +17,7 @@ import ConfigParser
 
 # # Functions
 
-# In[4]:
+# In[ ]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[11]:
+# In[ ]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -771,7 +771,7 @@ class ChannelSaver(PickleObj):
 
 # # Init Objects & Vars
 
-# In[7]:
+# In[ ]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -956,7 +956,7 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[8]:
+# In[ ]:
 
 main()
 
@@ -978,7 +978,7 @@ cv2.destroyAllWindows()
 cv2.waitKey(1)
 
 
-# In[1]:
+# In[ ]:
 
 env = 'Environment'
 myConfig = ConfigParser.RawConfigParser()
