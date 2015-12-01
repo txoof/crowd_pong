@@ -721,54 +721,6 @@ class ChannelSaver(PickleObj):
 
 # ## Classes In Training
 
-# class PickleObj:
-#     '''Write an object to disk using pickle'''
-#     
-#     def load(self, pickleFile):
-#         '''pickleFile - full path to file containing pickled object
-#             returns: unpickled object'''
-#         return pickle.load(open(pickleFile, 'rb'))
-#     
-#     def save(self, obj, pickleFile):
-#         '''obj - object to be pickled'''
-#         pickle.dump(obj, open(pickleFile, 'wb'))
-#         
-# class ChannelSaverxxx(PickleObj):
-#     def __init__(self, channels, pickleFile):
-#         self.channels = channels
-#         self.pickleFile = pickleFile
-#         self.cfgFile = self.pickleFile
-#         
-#     def loadChannels(self):
-#         self.channels = self.load(self.pickleFile)
-#         #assert len(self.channels) == 2
-#         #for color in self.channels:
-#         #    assert isinstance(self.channels[color], ColorHSV())
-#         return self.channels
-#     
-#     def saveChannels(self):
-#         self.channels = self.save(self.channels)
-#         pass
-# 
-# class ChannelSaver(PickleObj):
-#     def __init__(self, chan, pFile):
-#         self.channel = chan
-#         self.pFile = pFile
-#         self.hasLoaded = False
-#         self.hasSaved = False
-#         
-#     def cSave(self):
-#         self.save(self.channel, self.pFile)
-#         self.hasSaved = True
-#         return True
-#         
-#     def cLoad(self):
-#         self.channels = self.load(self.pFile)
-#         self.hasLoaded = True
-#         #return self.channels
-#     
-#     
-
 # # Init Objects & Vars
 
 # In[ ]:
@@ -959,16 +911,6 @@ def main():
 # In[ ]:
 
 main()
-
-
-# In[ ]:
-
-#myFrame.cap.release()
-
-
-# In[ ]:
-
-#%prun main()
 
 
 # In[ ]:
