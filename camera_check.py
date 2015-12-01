@@ -1,13 +1,14 @@
 
 # coding: utf-8
 
-# In[7]:
+# In[26]:
 
 import cv2
 import numpy
+import time
 
 
-# In[8]:
+# In[42]:
 
 def checkCams():
     '''enumerate the connected and readable video devices'''
@@ -25,8 +26,13 @@ def checkCams():
 cams = checkCams()
 print 'found camera devices at:', cams
 
-for i in range(0, 30):
-    cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
+cap.set(3, 640)
+cap.set(4, 480)
+cap.set(5, 15)
+
+for i in range(0, 200):
+    
     _, frame = cap.read()
     cv2.imshow('foo' , frame)
 cap.release()

@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[12]:
+# In[15]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -458,6 +458,13 @@ class cvFrame:
             self.cameraPointer = 0
         self.videoDev = self.connectedCams[self.cameraPointer]
         self.cap = cv2.VideoCapture(self.videoDev)
+        #### Testing #
+        self.cap.set(3, 1024)
+        self.cap.set(4, 600)
+        self.cap.set(5, 30)
+        # TESTING #####
+        
+        
         return (-3, 'changed video device to ' + str(self.videoDev))
     
     def increaseFrameSize(self):
@@ -483,6 +490,7 @@ class cvFrame:
     
     def readFrame(self):
         '''update captured frame capture device'''
+        '''
         width = self.frameWidth
         try:
             _, tempFrame = self.cap.read()
@@ -499,6 +507,8 @@ class cvFrame:
         resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
             
         self.frame = resizedFrame
+        '''
+        _, self.frame = self.cap.read()
         # convert to HSV space immediately 
         self.cvtHSV()
         return self.frame
