@@ -62,7 +62,7 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[ ]:
+# In[1]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -154,8 +154,21 @@ class KeyHandler:
         # consider displaying in alphabetical order
         # http://stackoverflow.com/questions/364519/in-python-how-to-i-iterate-over-a-dictionary-in-sorted-order
         print '='*20
+        itemList = []
+
         for key, (_, _, description) in self.keyMap.items():
-            print key, '=', description
+            itemList.append(key)
+            
+        print itemList
+        itemList.sort()
+        print itemList
+        for key in itemList:
+            print key, '   =   ', self.keyMap[key][2]
+        
+        
+        #for key, (_, _, description) in self.keyMap.items():
+        #    print key, '=', description
+        
         print '\n'
         return (-3, '')
 
@@ -758,8 +771,8 @@ def main():
     myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
 
     
-    myKeyHandler.addKey('l', myChannelSaver, 'cLoad', 'load channels pickle')
-    myKeyHandler.addKey('s', myChannelSaver, 'cSave', 'save channels pickle')
+    myKeyHandler.addKey('L', myChannelSaver, 'cLoad', 'load channels pickle')
+    myKeyHandler.addKey('S', myChannelSaver, 'cSave', 'save channels pickle')
 
     myKeyHandler.addKey('-', myFrame, 'decreaseFrameSize', 'decrease frame size')
     myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
@@ -926,9 +939,29 @@ env = 'Environment'
 myConfig = ConfigParser.RawConfigParser()
 
 
-# In[ ]:
+# In[9]:
+
+foo = {}
+foo['b']= ('Z', dir(foo), 2*2)
+foo['c'] = ('5')
+for keys in foo:
+    print keys
 
 
+# In[11]:
+
+foo.keys()
+
+
+# In[17]:
+
+itemList = ['C', '0', 'D', 'p', 'h', '-', 'L', 'O', 'Q', 'P', 'S', 'R', 'u', 'V', '=', '?']
+
+
+# In[18]:
+
+itemList.sort()
+print itemList
 
 
 # env = 'Environment'
