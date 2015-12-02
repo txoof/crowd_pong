@@ -3,7 +3,7 @@
 
 # # Imports
 
-# In[2]:
+# In[ ]:
 
 import re
 import cv2
@@ -17,7 +17,7 @@ import ConfigParser
 
 # # Functions
 
-# In[3]:
+# In[ ]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -62,7 +62,9 @@ def ratio(countA, countB):
 
 # # Classes
 
-# In[15]:
+# ## Exception Classes
+
+# In[ ]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -74,6 +76,12 @@ class InputError(Exception):
 class LoopHalt(Exception):
     '''class for handling a loopHalt event (quit)'''
     pass
+
+
+# ## Elapsed Time 
+# - measure elapsed time for throttling and timing
+
+# In[ ]:
 
 class elapsedTime:
     '''Measure elapsed time (time delta)
@@ -99,6 +107,11 @@ class elapsedTime:
             return False
 
 
+# ## MultiLine to List
+# - create a list of text items
+
+# In[ ]:
+
 # this method doesn't win much.  It still costs N calls to cv2.putText for every line displayed.
 class multiLine2List:
     '''create a list from strings'''
@@ -121,6 +134,12 @@ class multiLine2List:
     def numLines(self):
         '''return the number of elements'''
         return len(self.strList)
+
+
+# ## Key Handler 
+# - handle keyboard input
+
+# In[ ]:
 
 class KeyHandler:
     '''lookup keyboard input received as cv2.waitkey() input'''
@@ -186,6 +205,17 @@ class KeyHandler:
                 self.methodReturn = []
 
             
+
+
+# ## RunTime
+# - manage run time variables 
+#     - Pause/unpause
+#     - quit
+#     - manage video stream
+#     - game commands
+
+# In[ ]:
+
 class RunTime:
     '''maintain runtime state'''
 
@@ -224,6 +254,13 @@ class RunTime:
     def credits(_):
         return(6, 'Return to credits')
         
+
+
+# ## HSV color 
+# - HSV color space varaibles 
+
+# In[ ]:
+
 class ColorHSV:
     #class attributes
     
@@ -408,140 +445,15 @@ class ColorHSV:
     def adjust(self):
         '''dummy function used by openCV trackbars'''
         pass
-    
-class cvFrame:
-    '''OpenCV frame object'''
-    
-    def __init__(self, videoDev = 0, frameWidth = 500, name = 'Live'):
-        '''name - human readable name
-        cap - video capture object
-        frame - single frame from video stream
-        frameWidth - width of sampled frame in pixles 
-        mask - dictionary key: numpy.array image
-        nonZero - dictionary key: sum of non-zero pixels
-        result - dictionary key: bitwise and of mask and frame
-        videoDev - current video device
-        connectedCams - list of connected and readable cameras
-        cameraPointer = pointer to currently active camera'''
-        self.name = name
-        self.frameWidth = frameWidth
-        self.cap = cv2.VideoCapture(videoDev)
-        self.hsvFrame = None
-        self.frame = self.readFrame()
-        self.mask = {}
-        self.nonZero = {}
-        self.result = {}
-        self.videoDev = videoDev
-        self.connectedCams = self.checkCams()
-        self.cameraPointer = 0
-        
-    
-    def checkCams(self):
-        '''enumerate the connected and readable video devices'''
-        cameraList = []
-        for i in range(0, 10):
-            try:
-                connected, _ = cv2.VideoCapture(i).read()
-            except Excpetion, e:
-                print 'video device', i, 'not avaialble - this is OK!'
-            cv2.VideoCapture(i).release()
-            if connected:
-                cameraList.append(i)
-        return cameraList
-    
-    
-    def changeVideo(self):
-        '''cycle through available video devices'''
-        numCameras = len(self.connectedCams)
-        self.cameraPointer += 1
-        if self.cameraPointer > numCameras -1:
-            self.cameraPointer = 0
-        self.videoDev = self.connectedCams[self.cameraPointer]
-        self.cap = cv2.VideoCapture(self.videoDev)
-        #### Testing #
-        self.cap.set(3, 1024)
-        self.cap.set(4, 600)
-        self.cap.set(5, 30)
-        # TESTING #####
-        
-        
-        return (-3, 'changed video device to ' + str(self.videoDev))
-    
-    def increaseFrameSize(self):
-        '''increase sampled frame size'''
-        if self.frameWidth <= 1550:
-            self.frameWidth += 50
-        else:
-            pass
-        return (-3, 'indreased frame size')
-    
-    def decreaseFrameSize(self):
-        '''decrease sampled frame size'''
-        if self.frameWidth >= 100:
-            self.frameWidth += -50
-        else:
-            pass
-        return (-3, 'decreased frame size')
-    
-    def resetFrameSize(self):
-        '''reset framesize to default'''
-        self.frameWidth = 500
-        return (-3, 'reset frame size')
-    
-    def readFrame(self):
-        '''update captured frame capture device'''
-        '''
-        width = self.frameWidth
-        try:
-            _, tempFrame = self.cap.read()
-        except Exception, e:
-            print 'error reading frame:', e
-            
-        try:
-            r = float(width) / tempFrame.shape[1]
-        except Exception, e:
-            print 'bad frame.shape data', e
-            r = 1.0
-        
-        dim = (int(width), int(tempFrame.shape[0] * r))
-        resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
-            
-        self.frame = resizedFrame
-        '''
-        _, self.frame = self.cap.read()
-        # convert to HSV space immediately 
-        self.cvtHSV()
-        return self.frame
-    
-    def cvtHSV(self):
-        '''convert BGR frame to HSV space'''
-        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        return self.hsvFrame
-    
-    def release(self):
-        '''release any active cameras'''
-        for i in self.connectedCams:
-            cv2.VideoCapture(i).release
-        #self.cap.release()
-    
-    def calcMask(self, name = 'defaultName', lower = np.array( [0, 0, 0] ), 
-                 upper = np.array( [179, 255, 255] )): 
-        '''calculates mask based on two np.array objects with HSV values
-        mask - dictionary key(name): numpy.array
-                zero and non-zero pixels that represent masked pixels outside the defined range
-        nonZero - dictionary key(name): numpy.array
-                integer sum of non-zero pixels (unmased region)'''
-        self.mask[name] = cv2.inRange(self.hsvFrame, lower, upper)
-        self.nonZero[name] = cv2.countNonZero(self.mask[name])
-        
-    
-    def calcResult(self, name = 'defaultName'):
-        '''calculate a resultant image based on bitwise anding of frame and mask
-        result - dictonary key(name): resultant mask frame'''
-        self.result[name] = cv2.bitwise_and(self.frame, self.frame, mask = self.mask[name])
-
 
     
+
+
+# ## Web Socket
+# - manage outgoing websocket messages
+
+# In[ ]:
+
 class WebSocket:
     '''create a web socket connection object'''
     
@@ -602,6 +514,13 @@ class WebSocket:
             self.isConnected = False       
 
             
+
+
+# ## Message Handler
+# - handle messaes directed at users
+
+# In[ ]:
+
 class MsgHandler:
     '''display messages in open CVframe'''
     def __init__(self):
@@ -640,6 +559,13 @@ class MsgHandler:
             if match is not None:
                 self.delMsg(key)
                 
+
+
+# ## Throttle 
+# - create throttle timers to individually manage different timing events
+
+# In[ ]:
+
 class Throttle:
     #### TODO add increment as an optional item to work with the adjust method or increment method
     '''dictionary of timmer objects'''
@@ -689,6 +615,12 @@ class Throttle:
             return False
 
 
+# ## Pickle Object / Save HSV channesl
+# - create a pickle of an object
+# - save and load the HSV settings 
+
+# In[ ]:
+
 class PickleObj:
     '''Write an object to disk using pickle'''
     
@@ -701,22 +633,6 @@ class PickleObj:
         '''obj - object to be pickled'''
         pickle.dump(obj, open(pickleFile, 'wb'))
         
-class ChannelSaverxxx(PickleObj):
-    def __init__(self, channels, pickleFile):
-        self.channels = channels
-        self.pickleFile = pickleFile
-        self.cfgFile = self.pickleFile
-        
-    def loadChannels(self):
-        self.channels = self.load(self.pickleFile)
-        #assert len(self.channels) == 2
-        #for color in self.channels:
-        #    assert isinstance(self.channels[color], ColorHSV())
-        return self.channels
-    
-    def saveChannels(self):
-        self.channels = self.save(self.channels)
-        pass
 
 class ChannelSaver(PickleObj):
     def __init__(self, channels, pFile):
@@ -740,11 +656,171 @@ class ChannelSaver(PickleObj):
     
 
 
-# ## Classes In Training
+# In[ ]:
+
+class cvFrame:
+    '''OpenCV frame object'''
+    
+    def __init__(self, name = 'Live'):
+        '''name - human readable name
+        cap - video capture object
+        frame - single frame from video stream
+        frameWidth - width of sampled frame in pixles 
+        mask - dictionary key: numpy.array image
+        nonZero - dictionary key: sum of non-zero pixels
+        result - dictionary key: bitwise and of mask and frame
+        videoDev - current video device
+        connectedCams - list of connected and readable cameras
+        cameraPointer = pointer to currently active camera'''
+        self.name = name
+        #self.frameWidth = frameWidth
+        self.connectedCams = self.checkCams()
+        self.videoDev = self.connectedCams[0]
+        #self.cap = cv2.VideoCapture(self.connectedCams[0])
+        self.cap = self.initCam()
+        self.hsvFrame = None
+        self.frame = self.readFrame()
+        self.mask = {}
+        self.nonZero = {}
+        self.result = {}
+        self.cameraPointer = 0
+        self.resPointer = 3
+        self.resolutions = [(1920, 1080), (1600, 900), (1280, 720), (1024, 576), (960, 540), (640, 360), (480, 234),
+                           (320, 156), (80, 39)]
+        # sort from smallest to largest
+        self.resolutions.sort(key=lambda tup: tup[1]) 
+        
+    
+    def initCam(self):
+        '''init the camera specified by videoDev'''
+        #self.checkCams()
+        #self.videoDev = self.connectedCams[]
+        self.cap = cv2.VideoCapture(self.videoDev)
+        try:
+            res = self.resolutions[self.resPointer]
+        except Exception, e:
+            res = (640, 360)
+        print 'resolution: ', res
+        # thanks to Jerone for figuring this out!
+        # set set the W(3)xH(5) size
+        self.cap.set(3, res[0])
+        self.cap.set(4, res[1])
+        # this does not appear to work under OS X / openCV3
+        self.cap.set(5, 15)
+        return self.cap
+    
+    def checkCams(self):
+        '''enumerate the connected and readable video devices'''
+        cameraList = []
+        for i in range(0, 10):
+            try:
+                connected, _ = cv2.VideoCapture(i).read()
+            except Excpetion, e:
+                print 'video device', i, 'not avaialble - this is OK!'
+            if connected:
+                cameraList.append(i)
+        print 'cameraList:', cameraList
+        return cameraList
+    
+    
+    def changeVideo(self):
+        '''cycle through available video devices'''
+        numCameras = len(self.connectedCams)
+        self.cameraPointer += 1
+        if self.cameraPointer > numCameras -1:
+            self.cameraPointer = 0
+        self.videoDev = self.connectedCams[self.cameraPointer]
+        self.cap = self.initCam()       
+        return (-3, 'changed video device to ' + str(self.videoDev))
+    
+    def increaseFrameSize(self):
+        '''increase sampled frame size'''
+        #if self.frameWidth <= 1550:
+        #    self.frameWidth += 50
+        #else:
+        #    pass
+        if self.resPointer + 1 > len(self.resolutions) - 1:
+            self.resPointer = 0
+        else:
+            self.resPointer += 1
+        self.initCam()
+        return (-3, 'increased frame resolution')
+    
+    def decreaseFrameSize(self):
+        '''decrease sampled frame size'''
+        #if self.frameWidth >= 100:
+        #    self.frameWidth += -50
+        #else:
+        #    pass
+        if self.resPointer - 1 < 0:
+            self.resPointer = len(self.resolutions) - 1
+        else:
+            self.resPointer += -1
+        self.initCam()
+        return (-3, 'decreased frame resolution')
+    
+    def resetFrameSize(self):
+        '''reset framesize to default'''
+        self.resPointer = 3
+        self.initCam()
+        return (-3, 'reset frame size')
+    
+    def readFrame(self):
+        '''update captured frame capture device'''
+        '''
+        width = self.frameWidth
+        try:
+            _, tempFrame = self.cap.read()
+        except Exception, e:
+            print 'error reading frame:', e
+            
+        try:
+            r = float(width) / tempFrame.shape[1]
+        except Exception, e:
+            print 'bad frame.shape data', e
+            r = 1.0
+        
+        dim = (int(width), int(tempFrame.shape[0] * r))
+        resizedFrame = cv2.resize(tempFrame, dim, interpolation = cv2.INTER_AREA)
+            
+        self.frame = resizedFrame
+        '''
+        _, self.frame = self.cap.read()
+        # convert to HSV space immediately 
+        self.cvtHSV()
+        return self.frame
+    
+    def cvtHSV(self):
+        '''convert BGR frame to HSV space'''
+        self.hsvFrame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        return self.hsvFrame
+    
+    def release(self):
+        '''release any active cameras'''
+        for i in self.connectedCams:
+            cv2.VideoCapture(i).release
+        #self.cap.release()
+    
+    def calcMask(self, name = 'defaultName', lower = np.array( [0, 0, 0] ), 
+                 upper = np.array( [179, 255, 255] )): 
+        '''calculates mask based on two np.array objects with HSV values
+        mask - dictionary key(name): numpy.array
+                zero and non-zero pixels that represent masked pixels outside the defined range
+        nonZero - dictionary key(name): numpy.array
+                integer sum of non-zero pixels (unmased region)'''
+        self.mask[name] = cv2.inRange(self.hsvFrame, lower, upper)
+        self.nonZero[name] = cv2.countNonZero(self.mask[name])
+        
+    
+    def calcResult(self, name = 'defaultName'):
+        '''calculate a resultant image based on bitwise anding of frame and mask
+        result - dictonary key(name): resultant mask frame'''
+        self.result[name] = cv2.bitwise_and(self.frame, self.frame, mask = self.mask[name])
+
 
 # # Init Objects & Vars
 
-# In[10]:
+# In[ ]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -759,7 +835,7 @@ def main():
     myKeyHandler = KeyHandler()
     userMessages = MsgHandler()
     channels = [ColorHSV(color0), ColorHSV(color1)]
-    myFrame = cvFrame(0)
+    myFrame = cvFrame()
     myWebSocket = WebSocket(url)
     myThrottle = Throttle()
     
@@ -787,23 +863,13 @@ def main():
     myKeyHandler.addKey('0', myFrame, 'resetFrameSize', 'reset frame size to default (500px)')    
     myKeyHandler.addKey('V', myFrame, 'changeVideo', 'change video device to next availalbe camera')
         
-    # add throttle objects
+    # add throttle timers
     myThrottle.add('trackBars', .5)
     myThrottle.add('maskCalc', .05)
     myThrottle.add('capture', .05)
     #myThrottle.add('socket', 0) # this has < 1% CPU impact and can delay or miss messages sent to game
     myThrottle.add('display', .05)
-  
-    # bodge for initing camera
-    for i in range(0, 30):
-        cap = cv2.VideoCapture(0)
-        _, frame = cap.read()
-        cv2.imshow('init' , frame)
-    cap.release()
-    cv2.destroyWindow('init')
-    #cv2.destroyAllWindows()
-    #cv2.waitKey(1)
-  
+ 
     # create trackbar windows
     for color in channels:
         color.createTrackBars()
@@ -816,9 +882,6 @@ def main():
         myFrame.calcMask(color.name, lower = color.lower, upper = color.upper)
         myFrame.calcResult(color.name)
 
-        
-        
-        
     # main loop
     while True:
         try:
@@ -928,12 +991,12 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[11]:
+# In[ ]:
 
 main()
 
 
-# In[7]:
+# In[ ]:
 
 #myFrame.release()
 cv2.destroyAllWindows()
