@@ -1,15 +1,9 @@
 
 # coding: utf-8
 
-# In[ ]:
-
-#!/usr/local/bin/python
-#HASHBANG!
-
-
 # # Imports
 
-# In[ ]:
+# In[3]:
 
 import re
 import cv2
@@ -23,7 +17,7 @@ import ConfigParser
 
 # # Functions
 
-# In[ ]:
+# In[4]:
 
 def addText(img, text = ['your text here', 'and here'], xPos = 10, size = 1.25, textColor = (255, 255, 255),
             thickness = 1, lineType = 8, vertSpacing = 1):
@@ -70,7 +64,7 @@ def ratio(countA, countB):
 
 # ## Exception Classes
 
-# In[ ]:
+# In[5]:
 
 class InputError(Exception):
     '''general error for bad input'''
@@ -87,7 +81,7 @@ class LoopHalt(Exception):
 # ## Elapsed Time 
 # - measure elapsed time for throttling and timing
 
-# In[ ]:
+# In[6]:
 
 class elapsedTime:
     '''Measure elapsed time (time delta)
@@ -116,7 +110,7 @@ class elapsedTime:
 # ## MultiLine to List
 # - create a list of text items
 
-# In[ ]:
+# In[7]:
 
 # this method doesn't win much.  It still costs N calls to cv2.putText for every line displayed.
 class multiLine2List:
@@ -145,7 +139,7 @@ class multiLine2List:
 # ## Key Handler 
 # - handle keyboard input
 
-# In[ ]:
+# In[8]:
 
 class KeyHandler:
     '''lookup keyboard input received as cv2.waitkey() input'''
@@ -220,7 +214,7 @@ class KeyHandler:
 #     - manage video stream
 #     - game commands
 
-# In[ ]:
+# In[9]:
 
 class RunTime:
     '''maintain runtime state'''
@@ -265,7 +259,7 @@ class RunTime:
 # ## HSV color 
 # - HSV color space varaibles 
 
-# In[ ]:
+# In[10]:
 
 class ColorHSV:
     #class attributes
@@ -458,7 +452,7 @@ class ColorHSV:
 # ## Web Socket
 # - manage outgoing websocket messages
 
-# In[ ]:
+# In[11]:
 
 class WebSocket:
     '''create a web socket connection object'''
@@ -525,7 +519,7 @@ class WebSocket:
 # ## Message Handler
 # - handle messaes directed at users
 
-# In[ ]:
+# In[12]:
 
 class MsgHandler:
     '''display messages in open CVframe'''
@@ -570,7 +564,7 @@ class MsgHandler:
 # ## Throttle 
 # - create throttle timers to individually manage different timing events
 
-# In[ ]:
+# In[32]:
 
 class Throttle:
     #### TODO add increment as an optional item to work with the adjust method or increment method
@@ -578,11 +572,14 @@ class Throttle:
     def __init__(self):
         self.timers = {}
     
-    def add(self, timer, rate = 0):
+    def add(self, timer, rate = 0, adjust = .01):
         '''add a timer object
         timer - name of timer
-        rate - frequency'''
-        self.timers[timer] = [elapsedTime(), rate]
+        rate - frequency
+        default - initial setting
+        adjust - amount to increase or decrease by when adjusted'''
+        default = rate
+        self.timers[timer] = [elapsedTime(), rate, default, adjust]
         return True
     
     def delete(self, timer):
@@ -603,8 +600,58 @@ class Throttle:
         try:
             self.timers[timer][1] += adjust
         except Exception, e:
-            print 'problem adjusting; probable key error:', e
+            print 'problem adjusting; probable key error for timer:', timer. e
         return True
+    
+    def increase(self):
+        '''increase throttling (use less resources) for all throttles'''
+        for key in self.timers:
+            self.adjustRate(key, self.timers[key][3])
+            print key, '=', self.timers[key][1]
+        return (-3, 'increased throttles')
+    
+    def decrease(self):
+        '''increase throttling (use less resources) for all throttles'''
+        for key in self.timers:
+            self.adjustRate(key, self.timers[key][3]*-1)
+            print key, '=', self.timers[key][1]
+        return (-3, 'decreased throttles')        
+    
+    def reset(self):
+        '''reset throttles to initial setting'''
+        for key in self.timers:
+            self.timers[key][1] = self.timers[key][2]
+        return (-3, 'reset all throttles')
+    
+    def oldincrease(self):
+        '''increase throttling (use less resources) for all throttles'''
+        for key in self.timers:
+            adjust = self.timers[key][2]
+            if not (isinstance(adjust, float) or isinstance(adjust, int)):
+                print 'adjustment type error for throttle:', key
+                return (-2, 'attemted throttle increase failed')
+            try:
+                self.timers[key][1] += adjust
+            except Exception, e:
+                print 'adjustment failed for throttle:', key, e
+                return(-2, 'attempted throttle increase failed')
+        return(-2, 'increased throttles')
+        pass
+    
+    def olddecrease(self):
+        '''decrease throttling (use more resources) for all throttles'''
+        for key in self.timers:
+            adjust = self.timers[key][2]
+            if not (isinstance(adjust, float) or isinstance(adjust, int)):
+                print 'adjustment type error for throttle:', key
+                return (-2, 'attemted throttle decrease failed')
+            try:
+                self.timers[key][1] += -adjust
+            except Exception, e:
+                print 'adjustment failed for throttle:', key, e
+                return(-2, 'attempted throttle deacrease failed')
+        return (-2, 'decreased throttles')
+        pass
     
     def check(self, timer):
         '''check state of throttle entity and update if necessary'''
@@ -625,7 +672,7 @@ class Throttle:
 # - create a pickle of an object
 # - save and load the HSV settings 
 
-# In[ ]:
+# In[14]:
 
 class PickleObj:
     '''Write an object to disk using pickle'''
@@ -662,7 +709,7 @@ class ChannelSaver(PickleObj):
     
 
 
-# In[ ]:
+# In[15]:
 
 class cvFrame:
     '''OpenCV frame object'''
@@ -826,7 +873,7 @@ class cvFrame:
 
 # # Init Objects & Vars
 
-# In[ ]:
+# In[33]:
 
 def main():
     color0 = 'UP - Green' # up color
@@ -868,7 +915,12 @@ def main():
     myKeyHandler.addKey('=', myFrame, 'increaseFrameSize', 'increase frame size')
     myKeyHandler.addKey('0', myFrame, 'resetFrameSize', 'reset frame size to default (500px)')    
     myKeyHandler.addKey('V', myFrame, 'changeVideo', 'change video device to next availalbe camera')
-        
+    
+    myKeyHandler.addKey('>', myThrottle, 'increase', 'increase throttling')
+    myKeyHandler.addKey('<', myThrottle, 'decrease', 'decrease throttling')
+    myKeyHandler.addKey('T', myThrottle, 'reset', 'reset all throttles to inital setting')
+    
+    
     # add throttle timers
     myThrottle.add('trackBars', .5)
     myThrottle.add('maskCalc', .05)
@@ -977,12 +1029,9 @@ def main():
                 cv2.imshow(myFrame.name, myFrame.frame)
 
                 for key in myFrame.result:
-                    # bodge for adding text for testing
+                    # bodge for adding text
                     resultText = []
                     resultText.append('NonZero Px: ' + str(myFrame.nonZero[key]) )
-                    #resultText.append('L: ' + str(channelInfo[key][0]))
-                    #resultText.append('U: ' + str(channelInfo[key][1]))
-                    #addText(myFrame.result[key], ['NonZero Px: ' + str(myFrame.nonZero[key]) ])
                     addText(myFrame.result[key], resultText)
                 # this is a bit kludgy, but it is the simplest way to join two frames together
                 cv2.imshow('Up & Down', np.concatenate((myFrame.result[color0], myFrame.result[color1]), axis = 1))
@@ -997,7 +1046,7 @@ def main():
     myWebSocket.disconnect()
 
 
-# In[ ]:
+# In[34]:
 
 main()
 
