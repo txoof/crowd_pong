@@ -246,13 +246,13 @@ class RunTime:
         return (-99, 'quit')
     
     def pauseGame(_):
-        return(2, 'Pause game')
+        return(4, 'Pause game')
     
     def restart(_):
         return(3, 'Reset game with calibration')
     
     def doOver(_):
-        return(4, 'Do over')
+        return(99, 'Do over')
     
     def reset(_):
         return(5, 'Reset, skip calibration')
