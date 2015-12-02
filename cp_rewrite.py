@@ -1,6 +1,12 @@
 
 # coding: utf-8
 
+# In[ ]:
+
+#!/usr/local/bin/python
+#HASHBANG!
+
+
 # # Imports
 
 # In[ ]:
@@ -243,13 +249,13 @@ class RunTime:
         return(2, 'Pause game')
     
     def restart(_):
-        return(3, 'Restart game')
+        return(3, 'Reset game with calibration')
     
     def doOver(_):
         return(4, 'Do over')
     
-    def calibration(_):
-        return(5, 'Calibration')
+    def reset(_):
+        return(5, 'Reset, skip calibration')
     
     def credits(_):
         return(6, 'Return to credits')
@@ -849,9 +855,9 @@ def main():
     myKeyHandler.addKey('p', myRunTime, 'pause', 'pause live display')
     myKeyHandler.addKey('u', myRunTime, 'unpause', 'unpause live display')
     myKeyHandler.addKey('P', myRunTime, 'pauseGame', 'pause game')
-    myKeyHandler.addKey('R', myRunTime, 'restart', 'restart game')    
+    myKeyHandler.addKey('R', myRunTime, 'restart', 'restart game with calibration')    
     myKeyHandler.addKey('O', myRunTime, 'doOver', 'restart point')
-    myKeyHandler.addKey('C', myRunTime, 'calibration', 'return to calibration screen')
+    myKeyHandler.addKey('C', myRunTime, 'reset', 'reset, skip calibraiton')
     myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
 
     
