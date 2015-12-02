@@ -71,10 +71,11 @@ and unwanted pixels that are detected. To deal with this do the following:
   1. Remove the control colors from the window
   2. Adjust the HSV sliders to bring the pixel count as close to 0 as possible
   3. Bring back control colors and check pixel count, fine tune as needed
+  4. HSV settings can be saved to a pickle file and loaded to hasten calibration
 
 Keyboard Controls
 -----------------
-Note: Case matters l is not equal to L
+Note: Case matters l is not equal to L.  Use Shift + l for "L"
 
 -    =    decrease frame size
 0    =    reset frame size to default 
