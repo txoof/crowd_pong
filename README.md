@@ -39,13 +39,7 @@ color range, hue and saturation limits for each color.
   V (+/-): value of color (brigter colors have a higher value)
   CR: Preset color range to help quickly choose colors
 
-  Note: Due to a bug in the OpenCV 2.4/Python 2.7 implementation that causes the 
-  controls to be shuffled in an order that depends on the characters in the names,
-  the control panels have less than ideal names.
-
-Issues:
-Absolutely no error trapping. Extreemly brittle.
-Crashes when an another websocket client disconnects
+See cp-instructions.txt for more information.
 
 **tornado-websocket-server**
 Requirements:
@@ -56,15 +50,6 @@ Function:
 Websocket server that listens on ws://localhost/9000/ws for messages and then 
 rebroadcasts incoming messages to all connected clients.
 
-Issues:
-
-Resolved:
-X Causes video client to crash when a websocket client disconnects; requires a restart
-of video client and websocket server.
-Load newSock.html to view output 
-Thanks Joel Mortimer for fixing this!
-
-
 **write_to_websocket**
 Requirements:
   * Python 2.7
@@ -72,9 +57,3 @@ Requirements:
 
 Fucntion: 
 Test client for sending simulated output to websocket server.  
-
-Issues:
-
-Resolved Issues: 
-X Crashes when another websocket client disconnects.
-Thanks Joel Mortimer for fixing this!

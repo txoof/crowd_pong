@@ -1,0 +1,96 @@
+Crowd Pong Video Sample
+
+Description
+===========
+This was developed to run a crowd-controlled pong game.  The crowd is issued colored
+glow-stick bracelets of two colors.  They can control the player paddle by showing
+different amounts of the two colors. One color drives the paddle up while the other 
+drives the bat down. Aproximately equal amounts of both colors stops the bat.
+
+cp_video_capture.py captures a live video stream and calculates the ratio of 
+two color ranges defined in HSV (hue, saturation and value). The video stream is 
+displayed as both a live stream and a "masked" stream to show the colors that have been
+seleced.  
+
+Pixles that appear as black in the masked window have *not* been selected. The pixel
+mask can be adjusted using the Hue, Saturation and Value sliders  in the two
+control windows.  
+
+This script outputs the ratio of unmasked pixels defined as (q-s)/q where q > s to 
+a websocket for the userspace pong game to sample.  When the color representing "Up" > 
+"Down" the ratio is negative driving the user pong bat upwards in the userspace
+game.
+
+The cp_video_capture script also provides flow control for the game by sending 
+numerical codes across the websocket.  Communication is strictly one way.  
+
+Components
+==========
+
+cp_video_capture.py 
+-------------------
+Video capture and game control 
+
+Requirements:
+  * Python 2.7
+  * OpenCV 2.4 or greater
+  * numpy
+  * pickle
+  * websocket-client
+
+tornado-websocket-server.py 
+---------------------------
+Basic websocket echo server recieves and echos messages
+
+Requirements:
+  * Python 2.7
+  * tornado
+
+Instructions
+============
+* Start web socket server (listens on ws://localhost:9000/ws)
+* Start cp_video_capture and adjust the HSV sliders to accomodate control colors only
+
+Specifics
+---------
+cp_video_capture attempts to find all available web cameras that are connected. USB
+web cameras are enumerated in an arbitrary order depending on the USB bus.  Device 0
+is the default device, but can be changed (see commands below).
+
+Once the script has checked all available web cameras it will start with a live window
+and two masked windows.  Adjust the HSV sliders to show only the control colors. The CR
+slider can be used to quickly move to preset ranges. 
+  1. Fine tune the hue so only the selected color shows in each window
+  2. Fine tune the saturation (color richness) 
+  3. Fine tune the value (color brightness) 
+
+Calibration
+-----------
+The detected pixel count will show in each window. There will inevitably be some noise
+and unwanted pixels that are detected. To deal with this do the following:
+  1. Remove the control colors from the window
+  2. Adjust the HSV sliders to bring the pixel count as close to 0 as possible
+  3. Bring back control colors and check pixel count, fine tune as needed
+
+Keyboard Controls
+-----------------
+Note: Case matters l is not equal to L
+
+-    =    decrease frame size
+0    =    reset frame size to default 
+=    =    increase frame size
+?    =    display this help screen
+C    =    reset, skip calibraiton
+D    =    return to credits screen
+L    =    load channels pickle
+O    =    restart point
+P    =    pause game
+Q    =    stop execution
+R    =    restart game with calibration
+S    =    save channels pickle
+V    =    change video device to next availalbe camera
+h    =    display this help screen
+p    =    pause live display
+u    =    unpause live display
+
+
