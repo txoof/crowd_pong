@@ -48,8 +48,10 @@ Requirements:
 
 Instructions
 ============
-* Start web socket server (listens on ws://localhost:9000/ws)
-* Start cp_video_capture and adjust the HSV sliders to accomodate control colors only
+  1. Start web socket server (listens on ws://localhost:9000/ws)
+  2. Start cp_video_capture and adjust the HSV sliders to accomodate control colors only
+  3. Start game at URL: http://openrc.chronopunch.com/pongV1.11/
+  4. Follow on-screen instructions
 
 Specifics
 ---------
