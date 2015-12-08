@@ -1,1 +1,2 @@
 http://openrc.chronopunch.com/pongV1.13/
+http://openrc.chronopunch.com/pongV2.0/
