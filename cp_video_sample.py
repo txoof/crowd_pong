@@ -253,6 +253,13 @@ class RunTime:
     
     def credits(_):
         return(6, 'Return to credits')
+    
+
+    def transPlus(_):
+        return (7, 'increase live feed transparency')
+    
+    def transMinus(_):
+        return (6, 'decrease live feed transparency')
         
 
 
@@ -906,6 +913,9 @@ def main():
     myKeyHandler.addKey('O', myRunTime, 'doOver', 'restart point')
     myKeyHandler.addKey('C', myRunTime, 'reset', 'reset, skip calibraiton')
     myKeyHandler.addKey('D', myRunTime, 'credits', 'return to credits screen')
+    
+    myKeyHandler.addKey('z', myRunTime, 'transMinus', 'decrease transparency of live feed')
+    myKeyHandler.addKey('x', myRunTime, 'transPlus', 'increase transparency of live feed')
 
     
     myKeyHandler.addKey('L', myChannelSaver, 'cLoad', 'load channels pickle')
