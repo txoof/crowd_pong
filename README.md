@@ -1,6 +1,13 @@
 #crowd pong
 Installation Guide for Crowd Pong server and Glowsticks game engine.
 Crowd Pong (c) by Aaron Ciuffo
+Installation Guide for Crowd Pong server and Glowsticks game engine.
+
+Crowd Pong (server) (c) by Aaron Ciuffo
+
+Construct 2 Game engine (c) Chronopunch / Jeroen Ruiten
+
+Readme by Joel Mortimer :)
 
  _______  _______  _______           ______          _______  _______  _        _______ 
 (  ____ \(  ____ )(  ___  )|\     /|(  __  \        (  ____ )(  ___  )( (    /|(  ____ \
@@ -12,30 +19,37 @@ Crowd Pong (c) by Aaron Ciuffo
 (_______/|/   \__/(_______)(_______)(______/        |/       (_______)|/    )_)(_______)
                                                                                    
                              
+1. Install Python 2.7
 
-1. Install PyCharm (Nice GUI wrapper for Python)
-	- This will make installing the packages less of a tarball-ache, especially if you hate tar.gz etc.
+2. Install PyCharm (Nice GUI wrapper for Python)
+	- This will make installing the packages less of a ball-ache, especially if you hate tar.gz etc.
 
-2. Go to http://www.github.com/txoof/crowd_pong/ and download all files/folders.
+3. Go to http://www.github.com/txoof/crowd_pong/ and download all files/folders.
 	- Save it to a nice directory like ...\Steve's Documents\crowd_pong-master\
 
-3. Open Pycharm and open the directory you created (...\crowd_pong-master\) which contains all the python files.
+4. Open Pycharm and open the directory you created (...\crowd_pong-master\) which contains all the python files.
 
-4. Now you need to install the individual packages, in PyCharm go: File>Settings>Project:"project name">Project Interpreter
+5. Now you need to install the individual packages, in PyCharm go: File>Settings>Project:"project name">Project Interpreter
 
-5. Press the green + button on the right side of the list.You will be able to add packages through this menu.
+6. Press the green + button on the right side of the list.You will be able to add packages through this menu.
 
-6. Add the following packages, need to use the package ID:
+7. Add the following packages, need to use the package ID:
 
-	Package ID		      Package name
+	Package ID		Package name
 
-	pip			            PIP - a package manager, very useful	
-	cv2			            OpenCV2 - an webcam/image processing library
-	tornado			        Tornado - a websocket library to communicate with the web game engine
-	websocket-client	 Websocket client library, needed for debugging and testing
-	numpy			          NumPy - additional maths functionality in python
+	pip			PIP - a package manager, very useful	
+	cv2			OpenCV2 - an webcam/image processing library
+	tornado			Tornado - a websocket library to communicate with the web game engine
+	websocket-client	Websocket client library, needed for debugging and testing
+	numpy			NumPy - additional maths functionality in python (May require you to install "Visual C++ compiler for python")
 
-7. Save everything and restart. Just 'cause.
+	- Troubleshooting: If numpy won't install, add pip to the command line and try: pip install numpy
+	- Troubleshooting part 2: You may need to install a custom 'wheel' .whl file of numpy, as confirmed on Windows 10.
+	- Troubleshooting part 3: This whole thing just seems to works better on Mac or Ubuntu. Sorry Microsoft.
+
+8. Save everything and restart. Just 'cause.
+
+
  _______  _______  _______  _______ 
 (  ____ \(  ___  )(       )(  ____ \
 | (    \/| (   ) || () () || (    \/
@@ -60,15 +74,14 @@ ___) (___| )  \  |/\____) |   | |   | ) \ \__| (___) || (____/\   | |   ___) (__
 
 
 +-------------------------+                                   +-------------------------------------------+
-|                         |   Websocket Values -1.0^=x^=1.0   |                                           |
-|  Python Webcam Processor+---------------------------------->+  OpenRC Game Engine                       |
+|                         |   Websocket Values -1.0<=x<=1.0   |                                           |
+|  Python Webcam Processor+---------------------------------->+  Construct 2 Game Engine                       |
 |                         |                                   |                                           |
 |  cp_video_sample.py     |   Default websocket address:      |  http://openrc.chronopunch.com/pongV2.0/  |
 |                         |    ws://localhost:9000/ws         |                                           |
 |                         |                                   |                                           |
 |                         |                                   |                                           |
 +-------------------------+                                   +-------------------------------------------+
-
 
 1. Open Pycharm and open the directory you created in the INSTALLATION ABOVE (...\crowd_pong-master\) which contains all the python files.
 
@@ -91,7 +104,33 @@ Good results: - The green glowstick is clearly visible (within Up&Down) on the l
 		- The hue range is small, maybe about 40 difference between Hue- and Hue+.
 		- When you hide the glpowsticks, no other light is showing. The NonZero px count should be 0 for both screens.
 
-6. Once you have got the controls nice and happy, hit Shift+s. It should save the controls. Shift+l loads them. Or just write down the ranges.
+6. Once you have got the controls nice and happy, hit Shift+s. It should save the controls. Shift+l loads them. Or just write down the ranges. Commands will work as long as one of the 'live' windows is active. Hit 'h' for the list of commands (displayed in the python terminal). Shown below.
+Note: for captial letter commands, eg. 'S' fo save, hit shift+s.
++-+------------------------------------------------------+
+| -    =    decrease frame size                          |
+| 0    =    reset frame size to default (500px)          |
+| <    =    decrease throttling                          |
+| =    =    increase frame size                          |
+| >    =    increase throttling                          |
+| ?    =    display this help screen                     |
+| C    =    reset, skip calibraiton                      |
+| D    =    return to credits screen                     |
+| L    =    load channels pickle                         |
+| O    =    restart point                                |
+| P    =    pause game                                   |
+| Q    =    stop execution                               |
+| R    =    restart game with calibration                |
+| S    =    save channels pickle                         |
+| T    =    reset all throttles to inital setting        |
+| V    =    change video device to next availalbe camera |
+| h    =    display this help screen                     |
+| p    =    pause live display                           |
+| u    =    unpause live display                         |
+| x    =    increase transparency of li^e feed           |
+| z    =    decrease transparency of live feed           |
+|                                                        |
++--------------------------------------------------------+
+
 
 7. Open the Game Engine. If you have an internet connection, go to http://openrc.chronopunch.com/pongV2.0/
 
@@ -113,6 +152,7 @@ Good results: - The green glowstick is clearly visible (within Up&Down) on the l
 | (\ (   | (      | |      | (      | (   ) |      ) || (        | | \   || |   | |   | |   | (            ) |
 | ) \ \__| (____/\| (____/\| (____/\| )   ( |/\____) || (____/\  | )  \  || (___) |   | |   | (____/\/\____) |
 |/   \__/(_______/(_______/(_______/|/     \|\_______)(_______/  |/    )_)(_______)   )_(   (_______/\_______)
+
 
 
 Crowd Pong (c) by Aaron Ciuffo
@@ -151,7 +191,7 @@ write_to_websocket Requirements:
 
 Python 2.7
 websocket-client (pip install websocket-client)
-Fucntion: Test client for sending simulated output to websocket server.
+Function: Test client for sending simulated output to websocket server.
 	
 
 
